@@ -1,0 +1,222 @@
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Variable.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-VariableItalic.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: #050505;
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #fff;
+}
+
+/* ---- intro / loading logo animation ---- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.45s ease;
+}
+.intro--out {
+  opacity: 0;
+  pointer-events: none;
+}
+.intro__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---- Face ID login (simulated) ---- */
+.faceid {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+.faceid--out {
+  opacity: 0;
+  pointer-events: none;
+}
+.faceid__logo {
+  position: absolute;
+  top: 40px;
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.faceid__frame {
+  position: relative;
+  width: 128px;
+  height: 128px;
+}
+.faceid__brackets {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: faceid-breathe 1.6s ease-in-out infinite;
+}
+.faceid__brackets path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.faceid__frame--ok .faceid__brackets {
+  opacity: 1;
+  animation: faceid-flash 0.7s ease-out;
+}
+
+.faceid__scanline {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 10%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #fff 45%, #fff 55%, transparent);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  animation: faceid-scan 1.15s ease-in-out infinite;
+}
+
+.faceid__glyph {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.faceid__glyph--scan {
+  opacity: 1;
+  transform: scale(1);
+}
+.faceid__glyph--scan circle,
+.faceid__glyph--scan path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.faceid__glyph--scan circle {
+  fill: #fff;
+  stroke: none;
+}
+.faceid__glyph--scan.faceid__glyph--hide {
+  opacity: 0;
+  transform: scale(0.85);
+}
+.faceid__glyph--check {
+  opacity: 0;
+  transform: scale(0.7);
+}
+.faceid__glyph--check path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.faceid__glyph--check.faceid__glyph--show {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.3s ease 0.1s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s;
+}
+
+.faceid__name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.faceid__status {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.2px;
+  animation: faceid-textin 0.25s ease both;
+}
+
+@keyframes faceid-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes faceid-flash {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  30% {
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.9));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+}
+@keyframes faceid-scan {
+  0% {
+    top: 10%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    top: 88%;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 10%;
+    opacity: 0;
+  }
+}
+@keyframes faceid-textin {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

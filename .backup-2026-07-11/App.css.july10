@@ -1,0 +1,722 @@
+/* ============================================================= *
+ *  Formula 1 — Daily Schedule (iPad, 1194 x 834 canvas)
+ * ============================================================= */
+
+.stage {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1919;
+  overflow: hidden;
+}
+
+.screen {
+  position: relative;
+  width: 1194px;
+  height: 834px;
+  flex: 0 0 auto;
+  transform: scale(var(--scale, 1));
+  transform-origin: center center;
+  background: #1f1e1e url('/assets/bg.svg') center / cover no-repeat;
+  overflow: hidden;
+  color: #fff;
+}
+
+/* ---------- header ---------- */
+.logo {
+  position: absolute;
+  left: 24px;
+  top: 40px;
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+}
+.brand {
+  position: absolute;
+  left: 132px;
+  top: 44px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  color: #fff;
+}
+.avatar {
+  position: absolute;
+  right: 22px;
+  top: 34px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.coach {
+  position: absolute;
+  right: 74px;
+  top: 46px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+/* nav pill */
+.nav {
+  position: absolute;
+  left: 478px;
+  top: 32px;
+  width: 240px;
+  height: 56px;
+  border-radius: 20px;
+  background: rgba(217, 217, 217, 0.2);
+  display: flex;
+  align-items: stretch;
+  padding: 6px;
+  gap: 2px;
+}
+.nav__tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 15px;
+}
+.nav__tab img {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+.nav__tab span {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.225px;
+  text-transform: uppercase;
+  color: #bbb;
+}
+.nav__tab--active {
+  background: rgba(228, 228, 228, 0.85);
+}
+.nav__tab--active span {
+  color: #000;
+}
+
+/* title */
+.title {
+  position: absolute;
+  left: 40px;
+  top: 140px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 37px;
+  letter-spacing: -0.6px;
+  color: #fff;
+  white-space: nowrap;
+}
+.status {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 999px;
+  transform: translateY(2px);
+}
+.status--today {
+  background: #ff1700;
+  color: #fff;
+}
+.status--past {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cfcfcf;
+}
+.status--future {
+  background: transparent;
+  color: #8a8a8a;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.header-divider {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  top: 116px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- main content ---------- */
+.main {
+  position: absolute;
+  left: 28px;
+  top: 200px;
+  width: 1138px;
+  height: 634px;
+  border-radius: 24px 24px 0 0;
+  background: #0b0b0b;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1.4px);
+  background-size: 11px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: none;
+}
+
+/* ---- left timeline panel (scrollable) ---- */
+.timeline {
+  position: absolute;
+  left: 12px;
+  top: 30px;
+  width: 706px;
+  height: 590px;
+  border-radius: 20px;
+  background: rgba(71, 71, 71, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+.timeline__scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.timeline__scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.timeline__inner {
+  position: relative;
+  width: 100%;
+}
+
+/* hour rail: full hour label + half-hour dash between hours */
+.rail-hour {
+  position: absolute;
+  left: 45px;
+  width: 60px;
+  color: #e5e5e5;
+  font-size: 12.6px;
+  font-weight: 400;
+}
+.rail-half {
+  position: absolute;
+  left: 48px;
+  width: 17px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* ---- session card ---- */
+.card {
+  position: absolute;
+  left: 108px;
+  width: 585px;
+  background: #0d0d0c;
+  border-radius: 11px;
+  overflow: hidden;
+}
+.card--done {
+  opacity: 0.62;
+}
+.card__check {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #7CFF9B;
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+}
+.card__time {
+  position: absolute;
+  left: 22px;
+  top: 16px;
+  display: flex;
+  align-items: flex-start;
+}
+.card__hour {
+  font-size: 35px;
+  font-weight: 700;
+  line-height: 30px;
+  letter-spacing: 2.45px;
+  color: #fff;
+}
+.card__min {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.63px;
+  color: #fff;
+  margin-left: 3px;
+  margin-top: 2px;
+}
+.card__titleRow {
+  position: absolute;
+  left: 22px;
+  top: 52px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card__title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.28px;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+}
+.card__icon {
+  display: block;
+}
+.card__loc {
+  position: absolute;
+  left: 22px;
+  top: 74px;
+  display: flex;
+  align-items: center;
+}
+.card__locLabel {
+  font-size: 10px;
+  font-weight: 300;
+  text-transform: uppercase;
+  color: #fff;
+}
+.card__locTick {
+  width: 2px;
+  height: 12px;
+  background: #ff1700;
+  margin: 0 7px;
+}
+.card__locValue {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: #fff;
+}
+
+/* ---- goal card (expanded) ---- */
+.goal {
+  position: absolute;
+  left: 343px;
+  top: 20px;
+  width: 227px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.goal__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.33px;
+  text-transform: capitalize;
+  color: #fff;
+}
+.goal__body {
+  position: relative;
+  height: 76px;
+  border-radius: 10px;
+  background: #e3e3e3;
+  overflow: hidden;
+  padding: 5px 10px;
+}
+.goal__title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 14px;
+  color: #000;
+}
+.goal__sub {
+  margin-top: 1px;
+  font-size: 8px;
+  font-weight: 400;
+  line-height: 12px;
+  color: #000;
+}
+.goal__scoreRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 4px;
+}
+.goal__score {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.75px;
+  color: #000;
+}
+.goal__scoreCaption {
+  font-size: 6px;
+  font-weight: 300;
+  color: #000;
+}
+.dots {
+  position: absolute;
+  left: 10px;
+  right: 8px;
+  bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4f4d4d;
+}
+.dot--on {
+  background: #b2b2b2;
+}
+
+/* ---- right calendar ---- */
+.calendar {
+  position: absolute;
+  left: 734px;
+  top: 32px;
+  width: 376px;
+  height: 327px;
+  border-radius: 20px;
+  background: rgba(48, 47, 47, 0.7);
+  padding: 24px 21px;
+}
+.calendar__month {
+  font-size: 40px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+.calendar__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 40px;
+  padding: 0 4px;
+}
+.calendar__week span {
+  font-size: 20px;
+  font-weight: 400;
+  color: #fff;
+}
+.calendar__grid {
+  margin-top: 12px;
+  padding: 0 4px;
+}
+.calendar__row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: center;
+  height: 33px;
+}
+.calendar__day {
+  position: relative;
+  justify-self: start;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+.calendar__day:not(.calendar__day--empty):hover {
+  transform: scale(1.15);
+}
+.calendar__day--empty {
+  cursor: default;
+}
+/* future days are dimmed (no history yet) */
+.calendar__day--future {
+  color: rgba(255, 255, 255, 0.4);
+}
+/* locked days: visible but not selectable */
+.calendar__day--locked {
+  color: rgba(255, 255, 255, 0.22);
+  cursor: not-allowed;
+}
+.calendar__day--locked:hover {
+  transform: none;
+}
+/* race weekend stays red regardless of past/future */
+.calendar__day--red {
+  color: #ff1700;
+}
+/* today: outline ring when it isn't the selected day */
+.calendar__day--today::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  border: 2px solid #ff1700;
+  z-index: -1;
+}
+.calendar__day--selected {
+  color: #fff;
+  z-index: 1;
+}
+.calendar__day--selected::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: #ff1700;
+  z-index: -1;
+}
+
+/* ---- add button ---- */
+.add {
+  position: absolute;
+  left: 734px;
+  top: 370px;
+  width: 203px;
+  height: 45px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(71, 71, 71, 0.35);
+  color: #fff;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 400;
+  text-align: left;
+  padding-left: 18px;
+  cursor: pointer;
+}
+
+/* day "+" add button, upper-right of the schedule panel (Figma 1503:1863) */
+.day-add {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 8;
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(217, 217, 217, 0.85);
+  color: #0d0d0c;
+  font-family: inherit;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+.day-add:hover {
+  background: #ffffff;
+  transform: scale(1.06);
+}
+
+/* ============================================================= *
+ *  Editing: click a card -> Change / Delete (Figma 1494:1857)
+ * ============================================================= */
+.card--editable {
+  cursor: pointer;
+}
+.card--editable:hover {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.card-menu {
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  background: rgba(13, 13, 12, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 31px;
+  z-index: 6;
+}
+.menu-btn {
+  width: 218px;
+  height: 61px;
+  border: none;
+  border-radius: 10px;
+  background: #4d4c4c;
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2777px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.menu-btn:hover {
+  background: #5c5b5b;
+}
+.menu-btn--del:hover {
+  background: #6b3330;
+}
+
+.edit-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+/* ---- empty slot (after delete): + add / - remove ---- */
+.empty-slot {
+  position: absolute;
+  left: 108px;
+  width: 585px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 24px;
+  z-index: 4;
+}
+.empty-slot__time {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.empty-slot__actions {
+  display: flex;
+  gap: 12px;
+}
+.slot-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.slot-btn--add:hover {
+  border-color: #7cff9b;
+  background: rgba(124, 255, 155, 0.18);
+}
+.slot-btn--rem:hover {
+  border-color: #ff5a45;
+  background: rgba(255, 23, 0, 0.2);
+}
+.empty-slot__label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+/* ---- activity picker (Change / Add) ---- */
+.picker {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.picker__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+.picker__panel {
+  position: relative;
+  width: 470px;
+  max-width: 92%;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.picker__head {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.picker__time {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #cfcfcf;
+}
+.picker__time select {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.picker__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.picker__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.picker__item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.picker__cancel {
+  margin-top: 14px;
+  width: 100%;
+  padding: 11px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #bbb;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.picker__cancel:hover {
+  color: #fff;
+}
