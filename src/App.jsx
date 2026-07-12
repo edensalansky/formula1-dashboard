@@ -10,11 +10,6 @@ import './App.css'
  * ------------------------------------------------------------------ */
 
 const A = '/assets'
-const HOUR_H = 105 // px per hour on the timeline rail
-const PAD_TOP = 24 // top padding inside the scroll area
-const CARD_GAP = 10 // gap between a card and the next slot
-const TODAY = 6 // "today" in this July 2026 mock
-const VISIBLE_UNTIL = TODAY + 1 // today + tomorrow are selectable; later days are locked
 
 /* icon per session type: [src, size] */
 const ICONS = {
@@ -26,122 +21,73 @@ const ICONS = {
   debrief: [`${A}/icon-debrief.svg`, 18],
 }
 
-/* activities offered by the "Change" / "Add" picker */
-const ACTIVITIES = [
-  { title: 'Simulator Training', type: 'simulator', location: 'Simulator Room N.1' },
-  { title: 'Physical Training', type: 'training', location: 'Performance Gym' },
-  { title: 'Neck Strength', type: 'training', location: 'Performance Gym' },
-  { title: 'Cognitive Training', type: 'training', location: 'Performance Gym' },
-  { title: 'Medical Check-Up', type: 'medical', location: 'Medical Room' },
-  { title: 'Ice Bath', type: 'icebath', location: 'Recovery Zone' },
-  { title: 'Strategy Debrief', type: 'debrief', location: 'Engineering Room' },
-  { title: 'Meal', type: 'meal', location: 'Dining Area' },
+/* presets offered in the "add schedule item" picker, grouped by category */
+const SCHEDULE_TYPES = [
+  { value: 'simulator-training', label: 'Simulator Training', icon: 'simulator', category: 'Training', location: 'Simulator Room N.1' },
+  { value: 'physical-training', label: 'Physical Training', icon: 'training', category: 'Training', location: 'Performance Gym' },
+  { value: 'cognitive-training', label: 'Cognitive Training', icon: 'training', category: 'Training', location: 'Performance Gym' },
+  { value: 'reaction-training', label: 'Reaction Training', icon: 'training', category: 'Training', location: 'Performance Gym' },
+  { value: 'neck-strength', label: 'Neck Strength', icon: 'medical', category: 'Training', location: 'Medical Room' },
+  { value: 'media-training', label: 'Media Training', icon: 'debrief', category: 'Training', location: 'Class 2' },
+  { value: 'breakfast', label: 'Breakfast', icon: 'meal', category: 'Break & Recovery', location: 'Dining Area' },
+  { value: 'lunch', label: 'Lunch', icon: 'meal', category: 'Break & Recovery', location: 'Dining Area' },
+  { value: 'dinner', label: 'Dinner', icon: 'meal', category: 'Break & Recovery', location: 'Dining Area' },
+  { value: 'medical-checkup', label: 'Medical Check-Up', icon: 'medical', category: 'Break & Recovery', location: 'Medical Room' },
+  { value: 'ice-bath', label: 'Ice Bath', icon: 'icebath', category: 'Break & Recovery', location: 'Performance Gym' },
+  { value: 'recovery', label: 'Recovery', icon: 'icebath', category: 'Break & Recovery', location: 'Recovery Room' },
+  { value: 'performance-debrief', label: 'Performance Debrief', icon: 'debrief', category: 'Break & Recovery', location: 'Class 2' },
 ]
 
-/* ---- F1 training-day templates ----------------------------------- */
-const RACE_PREP = [
-  { start: '07:00', title: 'Breakfast', type: 'meal', location: 'Dining Area' },
-  { start: '08:00', title: 'Physical Warm-Up', type: 'training', location: 'Performance Gym' },
-  { start: '09:00', title: 'Simulator Training', type: 'simulator', location: 'Simulator Room N.1', goal: { title: 'Focus under pressure', sub: 'Errors increase under cognitive load', score: 73 } },
-  { start: '10:30', title: 'Medical Check-Up', type: 'medical', location: 'Medical Room' },
-  { start: '11:30', title: 'Neck Strength', type: 'training', location: 'Performance Gym', goal: { title: 'Increase neck stability', sub: 'Reduced stability under sustained G-force load', score: 81 } },
-  { start: '13:00', title: 'Lunch', type: 'meal', location: 'Dining Area' },
-  { start: '14:00', title: 'Strategy Debrief', type: 'debrief', location: 'Engineering Room' },
-  { start: '15:00', title: 'Cognitive Training', type: 'training', location: 'Performance Gym', goal: { title: 'Reaction time', sub: 'Delayed response under sustained fatigue', score: 88 } },
-  { start: '16:30', title: 'Reaction Drills', type: 'simulator', location: 'Simulator Room N.1' },
-  { start: '17:30', title: 'Ice Bath', type: 'icebath', location: 'Recovery Zone' },
-  { start: '18:30', title: 'Performance Debrief', type: 'debrief', location: 'Meeting Room' },
-  { start: '19:30', title: 'Dinner', type: 'meal', location: 'Dining Area' },
+/* preset locations offered in the location picker */
+const SCHEDULE_LOCATIONS = [
+  'Dining Area',
+  'Simulator Room N.1',
+  'Performance Gym',
+  'Medical Room',
+  'Class 2',
+  'Recovery Room',
 ]
 
-const SIMULATOR_DAY = [
-  { start: '07:30', title: 'Breakfast', type: 'meal', location: 'Dining Area' },
-  { start: '08:30', title: 'Simulator Training', type: 'simulator', location: 'Simulator Room N.1', goal: { title: 'Concentration endurance', sub: 'Focus fades during long high-stress sessions', score: 76 } },
-  { start: '10:00', title: 'Data Review', type: 'debrief', location: 'Engineering Room' },
-  { start: '11:00', title: 'Physical Training', type: 'training', location: 'Performance Gym', goal: { title: 'Core endurance', sub: 'Fatigue building in the final stint', score: 84 } },
-  { start: '12:30', title: 'Lunch', type: 'meal', location: 'Dining Area' },
-  { start: '13:30', title: 'Simulator Training', type: 'simulator', location: 'Simulator Room N.1', goal: { title: 'Reaction consistency', sub: 'Response slows as fatigue builds', score: 79 } },
-  { start: '15:00', title: 'Cognitive Training', type: 'training', location: 'Performance Gym' },
-  { start: '16:00', title: 'Ice Bath', type: 'icebath', location: 'Recovery Zone' },
-  { start: '17:00', title: 'Performance Debrief', type: 'debrief', location: 'Meeting Room' },
-  { start: '18:00', title: 'Dinner', type: 'meal', location: 'Dining Area' },
-]
+/* iPhone-style scrolling wheel column (hour / minute pickers) */
+function WheelPicker({ options, value, onChange, format }) {
+  const ref = useRef(null)
+  const ITEM_H = 32
+  const timer = useRef(null)
+  const didInit = useRef(false)
 
-const RECOVERY = [
-  { start: '09:00', title: 'Breakfast', type: 'meal', location: 'Dining Area' },
-  { start: '10:00', title: 'Physiotherapy', type: 'medical', location: 'Medical Room' },
-  { start: '11:00', title: 'Light Mobility', type: 'training', location: 'Performance Gym', goal: { title: 'Restore range of motion', sub: 'Stiffness after sustained race load', score: 69 } },
-  { start: '12:30', title: 'Lunch', type: 'meal', location: 'Dining Area' },
-  { start: '13:30', title: 'Ice Bath', type: 'icebath', location: 'Recovery Zone' },
-  { start: '14:30', title: 'Sponsor Media', type: 'debrief', location: 'Media Room' },
-  { start: '15:30', title: 'Recovery Massage', type: 'medical', location: 'Medical Room' },
-  { start: '16:30', title: 'Dinner', type: 'meal', location: 'Dining Area' },
-]
+  useEffect(() => {
+    if (didInit.current || !ref.current) return
+    didInit.current = true
+    const idx = Math.max(0, options.indexOf(value))
+    ref.current.scrollTop = idx * ITEM_H
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-const REST_DAY = [
-  { start: '09:00', title: 'Breakfast', type: 'meal', location: 'Dining Area' },
-  { start: '10:00', title: 'Light Walk', type: 'training', location: 'Outdoor Track' },
-  { start: '11:00', title: 'Physiotherapy', type: 'medical', location: 'Medical Room' },
-  { start: '12:00', title: 'Lunch', type: 'meal', location: 'Dining Area' },
-  { start: '13:00', title: 'Team Meeting', type: 'debrief', location: 'Meeting Room' },
-  { start: '14:00', title: 'Dinner', type: 'meal', location: 'Dining Area' },
-]
+  const handleScroll = () => {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      if (!ref.current) return
+      const idx = Math.max(0, Math.min(options.length - 1, Math.round(ref.current.scrollTop / ITEM_H)))
+      ref.current.scrollTop = idx * ITEM_H
+      if (options[idx] !== value) onChange(options[idx])
+    }, 90)
+  }
 
-const RED_DAYS = [24, 25, 26] // race weekend
-
-function scheduleForDay(day) {
-  if (RED_DAYS.includes(day)) return RACE_PREP // race weekend
-  const dow = new Date(2026, 6, day).getDay() // 0 sun .. 6 sat
-  if (dow === 0) return REST_DAY
-  if (dow === 6) return RECOVERY
-  return day % 2 === 0 ? SIMULATOR_DAY : RACE_PREP
+  return (
+    <div className="wheel-col">
+      <div className="wheel-highlight" />
+      <div className="wheel" ref={ref} onScroll={handleScroll}>
+        <div className="wheel-pad" />
+        {options.map((o) => (
+          <div key={o} className={'wheel-item' + (o === value ? ' wheel-item--sel' : '')}>
+            {format ? format(o) : o}
+          </div>
+        ))}
+        <div className="wheel-pad" />
+      </div>
+    </div>
+  )
 }
-
-function weekdayName(day) {
-  return new Date(2026, 6, day).toLocaleDateString('en-US', { weekday: 'long' })
-}
-
-const toHours = (t) => {
-  const [h, m] = t.split(':').map(Number)
-  return h + m / 60
-}
-const hoursToHM = (t) => {
-  const h = Math.floor(t + 1e-6)
-  const m = Math.round((t - h) * 60)
-  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')
-}
-
-// status of a day relative to "today"
-function dayStatus(day) {
-  if (day < TODAY) return 'past'
-  if (day === TODAY) return 'today'
-  return 'future'
-}
-
-/* build an editable schedule (explicit start + duration) from a template */
-function buildSchedule(template) {
-  const items = template.map((s, i) => {
-    const start = toHours(s.start)
-    const next = i < template.length - 1 ? toHours(template[i + 1].start) : start + 1
-    const { start: _s, ...rest } = s
-    return { start, dur: next - start, ...rest }
-  })
-  return { items }
-}
-
-/* half-hour time options for the "add session" picker */
-const TIME_OPTIONS = []
-for (let t = 6; t <= 22; t += 0.5) TIME_OPTIONS.push(t)
-
-/* ---- calendar grid (July 2026, 1st is Wednesday) ----------------- */
-const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-const CAL_ROWS = [
-  [null, null, null, 1, 2, 3, 4],
-  [5, 6, 7, 8, 9, 10, 11],
-  [12, 13, 14, 15, 16, 17, 18],
-  [19, 20, 21, 22, 23, 24, 25],
-  [26, 27, 28, 29, 30, 31, null],
-]
 
 /* ------------------------------------------------------------------ */
 function ProgressDots({ score }) {
@@ -156,75 +102,9 @@ function ProgressDots({ score }) {
   )
 }
 
-function SessionCard({ s, time, top, height, done, editable, menuOpen, onOpen, onChange, onDelete }) {
-  const expanded = !!s.goal
-  const [src, size] = ICONS[s.type]
-  const [hour, min] = time.split(':')
-  return (
-    <div
-      className={'card' + (done ? ' card--done' : '') + (editable ? ' card--editable' : '')}
-      style={{ top, height }}
-      onClick={editable ? onOpen : undefined}
-    >
-      {done && <span className="card__check">✓</span>}
-      <div className="card__time">
-        <span className="card__hour">{hour}</span>
-        <span className="card__min">{min}</span>
-      </div>
-
-      <div className="card__titleRow">
-        <span className="card__title">{s.title}</span>
-        <img className="card__icon" src={src} alt="" style={{ width: size, height: size }} />
-      </div>
-
-      <div className="card__loc">
-        <span className="card__locLabel">Location</span>
-        <span className="card__locTick" />
-        <span className="card__locValue">{s.location}</span>
-      </div>
-
-      {expanded && (
-        <div className="goal">
-          <div className="goal__label">mAIN GOAL</div>
-          <div className="goal__body">
-            <div className="goal__title">{s.goal.title}</div>
-            <div className="goal__sub">{s.goal.sub}</div>
-            <div className="goal__scoreRow">
-              <span className="goal__score">{s.goal.score} / 100</span>
-              <span className="goal__scoreCaption">Current score</span>
-            </div>
-            <ProgressDots score={s.goal.score} />
-          </div>
-        </div>
-      )}
-
-      {menuOpen && (
-        <div className="card-menu" onClick={(e) => e.stopPropagation()}>
-          <button className="menu-btn" onClick={onChange}>Change</button>
-          <button className="menu-btn menu-btn--del" onClick={onDelete}>Delete</button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function EmptySlot({ time, top, height, onAdd, onRemove }) {
-  return (
-    <div className="empty-slot" style={{ top, height }}>
-      <span className="empty-slot__time">{time}</span>
-      <div className="empty-slot__actions">
-        <button className="slot-btn slot-btn--add" title="Add activity" onClick={onAdd}>+</button>
-        <button className="slot-btn slot-btn--rem" title="Remove this slot" onClick={onRemove}>−</button>
-      </div>
-      <span className="empty-slot__label">empty</span>
-    </div>
-  )
-}
-
-/* shared nav pill — switches between the schedule, dashboard and training screens */
+/* shared nav pill — switches between the dashboard and training screens */
 function Nav({ active, onNav }) {
   const tabs = [
-    ['schedule', 'schedule', `${A}/nav-schedule.svg`],
     ['dashboard', 'dashbord', `${A}/nav-dashbord.svg`],
     ['training', 'training', `${A}/nav-training.svg`],
   ]
@@ -950,7 +830,6 @@ const FOCUS_POINTS = [
 ]
 
 function DashboardScreen({ onNav }) {
-  const [view, setView] = useState('default') // track view: 'default' | 'focus'
   const [sel, setSel] = useState(null) // selected focus point (1..6)
   const [remain, setRemain] = useState(11 * 86400 + 2 * 3600 + 32 * 60 + 24) // Belgium GP countdown (sec)
   useEffect(() => {
@@ -963,231 +842,289 @@ function DashboardScreen({ onNav }) {
   const m = Math.floor((remain % 3600) / 60)
   const s = remain % 60
 
-  // live driver-state data — drifts continuously as new data comes in
-  const [ready, setReady] = useState(84) // readiness %
-  const [bpm, setBpm] = useState(50) // heart rate
-  const [hydration, setHydration] = useState(85) // %
-  useEffect(() => {
-    const id = setInterval(() => {
-      setReady((r) => Math.max(79, Math.min(90, r + Math.round((Math.random() - 0.5) * 3))))
-      setBpm((b) => Math.max(46, Math.min(60, b + Math.round((Math.random() - 0.5) * 3))))
-      setHydration((v) => Math.max(80, Math.min(92, v + Math.round((Math.random() - 0.5) * 2))))
-    }, 1300)
-    return () => clearInterval(id)
-  }, [])
-  const ARC = Math.PI * 76 // semicircle length for r=76
-
   return (
     <>
       {/* 3D track model — centered in the frame, behind the UI */}
-      <Track3D mode={view} selected={sel} onSelectPoint={setSel} />
+      <Track3D mode="focus" selected={sel} onSelectPoint={setSel} />
 
       <img className="logo" src={`${A}/c1logo.svg`} alt="C1" />
       <Nav active="dashboard" onNav={onNav} />
       <div className="sh-avatar">SH</div>
 
-      <h1 className="dash-hi">Hi Steve</h1>
-      <div className="dash-sub">Your Driver is Charles Leclerc</div>
+      <h1 className="dash-hi">Good morning Steve!</h1>
+      <div className="dash-sub">Here's your dashboard for today</div>
 
-      {/* driver ID card */}
-      <div className="drv-card">
-        <div className="drv-top">
-          <img className="drv-badge" src={`${A}/ferrari.png`} alt="Ferrari" />
-          <div>
-            <div className="drv-name">Charles Leclerc</div>
-            <div className="drv-team">Ferrari · #16</div>
-            <div className="drv-meta">Monaco · 27 yrs · 8th season</div>
+      {/* driver status + next race — slide fully off-frame to the left when a
+          track point is selected, so only the track and its close-up data show */}
+      <div className={'dash-left-col' + (sel != null ? ' dash-left-col--hidden' : '')}>
+        <div className="drv-section-title">Driver Status</div>
+
+        {/* driver ID card (Figma 1844:280) */}
+        <div className="drv2-card">
+          <div className="drv2-name">Charles Leclerc</div>
+          <img className="drv2-flag" src={`${A}/drv-flag.png`} alt="Monaco" />
+          <div className="drv2-team">Monaco | Ferrari |</div>
+          <div className="drv2-num">16</div>
+          <div className="drv2-stats">
+            <p>Age 27</p>
+            <p>Weight 68kg</p>
+            <p>Height 1.80m</p>
+          </div>
+
+          <div className="drv2-gauge">
+            <img className="drv2-vec drv2-vec21" src={`${A}/drv-vec21.svg`} alt="" />
+            <img className="drv2-vec drv2-vec22" src={`${A}/drv-vec22.svg`} alt="" />
+            <img className="drv2-vec drv2-vec23" src={`${A}/drv-vec23.svg`} alt="" />
+            <img className="drv2-vec drv2-vec24" src={`${A}/drv-vec24.svg`} alt="" />
+            <div className="drv2-ring">
+              <img className="drv2-ring-outer" src={`${A}/drv-ellipse-outer.svg`} alt="" />
+              <img className="drv2-ring-iso" src={`${A}/drv-isolation.svg`} alt="" />
+              <img className="drv2-ring-inner" src={`${A}/drv-ellipse-inner.svg`} alt="" />
+              <div className="drv2-stable">Stable</div>
+              <div className="drv2-pct">83 %</div>
+            </div>
+            <div className="drv2-lbl drv2-lbl-bpm">BPM</div>
+            <div className="drv2-lbl drv2-lbl-hyd">Hydration</div>
+            <div className="drv2-lbl drv2-lbl-focus">focus</div>
+            <div className="drv2-lbl drv2-lbl-stress">stress</div>
           </div>
         </div>
 
-        <div className="drv-phys">
-          <span>1.80 m</span>
-          <i>·</i>
-          <span>68 kg</span>
-          <i>·</i>
-          <span>BMI 21.0</span>
-          <i>·</i>
-          <span>8% BF</span>
-        </div>
+        <div className="next-race-title">Next race</div>
 
-        <div className="drv-metrics">
-          <div className="drv-m"><span>Resting HR</span><b>46<i>bpm</i></b></div>
-          <div className="drv-m"><span>VO₂ Max</span><b>60<i>ml/kg</i></b></div>
-          <div className="drv-m"><span>Neck strength</span><b>45<i>kg</i></b></div>
-          <div className="drv-m"><span>Reaction</span><b>185<i>ms</i></b></div>
-        </div>
-
-        <div className="drv-season">
-          <div className="drv-s"><b>P4</b><span>Championship</span></div>
-          <div className="drv-s"><b>75</b><span>Points</span></div>
-          <div className="drv-s"><b>4</b><span>Podiums</span></div>
-        </div>
-
-        <div className="drv-focus"><em>Coach focus</em> Neck &amp; sustained-G tolerance</div>
-      </div>
-
-      {/* driver status + readiness gauge */}
-      <div className="status-card">
-        <div className="status-title">Driver Status</div>
-        <div className="gauge">
-          <svg viewBox="0 0 200 124" className="gauge__svg">
-            <defs>
-              <linearGradient id="ready" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stopColor="#8fbf00" />
-                <stop offset="1" stopColor="#c6ff00" />
-              </linearGradient>
-            </defs>
-            <path d="M20 96 A76 76 0 0 1 180 96" fill="none" stroke="#3a3a3a" strokeWidth="11" strokeLinecap="round" />
-            <path
-              d="M20 96 A76 76 0 0 1 180 96"
-              fill="none"
-              stroke="url(#ready)"
-              strokeWidth="11"
-              strokeLinecap="round"
-              strokeDasharray={`${(ready / 100) * ARC} ${ARC}`}
-              style={{ transition: 'stroke-dasharray 1s ease' }}
-            />
-            <text className="g-tick" x="100" y="13" textAnchor="middle">50</text>
-            <text className="g-tick" x="14" y="114" textAnchor="middle">0</text>
-            <text className="g-tick" x="186" y="114" textAnchor="middle">100</text>
-            <text className="g-lbl" x="100" y="74" textAnchor="middle">Readiness</text>
-            <text className="g-val" x="100" y="98" textAnchor="middle">{ready}%</text>
-          </svg>
-        </div>
-        <div className="status-metrics">
-          <div>
-            <div className="sm-lbl">Time sleep</div>
-            <div className="sm-val">7H 24M</div>
+        {/* next race card (Figma 1848:1276) */}
+        <div className="race-card">
+          <div className="race-track">SPA - FRANCORCHAMPS</div>
+          <div className="race-date">belgium 17-19 Jul</div>
+          <div className="race-countdown">{d}d : {p2(h)}h : {p2(m)}m : {p2(s)}s</div>
+          <div className="race-lap">
+            <div className="race-stat-lbl">Lap Length</div>
+            <div className="race-stat-val">7.994 Km</div>
           </div>
-          <div>
-            <div className="sm-lbl">BPM</div>
-            <div className="sm-val">{bpm}</div>
-          </div>
-          <div>
-            <div className="sm-lbl">Hydration</div>
-            <div className="sm-val">{hydration}%</div>
+          <div className="race-dist">
+            <div className="race-stat-lbl">Race Distance</div>
+            <div className="race-stat-val">308.052 Km</div>
           </div>
         </div>
       </div>
 
-      {/* Belgium GP countdown */}
-      <div className="gp">
-        <div className="gp-name">BELGIUM GP</div>
-        <div className="gp-clock">
-          <div><span>{p2(d)}</span><em>Days</em></div>
-          <b>:</b>
-          <div><span>{p2(h)}</span><em>Hours</em></div>
-          <b>:</b>
-          <div><span>{p2(m)}</span><em>Minutes</em></div>
-          <b>:</b>
-          <div><span>{p2(s)}</span><em>Seconds</em></div>
-        </div>
-        <div className="gp-bar" />
+      {/* focus-point data card — sits off-frame to the left, slides in on selection */}
+      <div className={'focus-panel' + (sel != null ? ' focus-panel--open' : '')}>
+        {sel != null && (
+          <>
+            <div className="focus-panel__head">
+              <span className="focus-panel__num">{sel}</span>
+              <div className="focus-panel__name">{FOCUS_POINTS[sel - 1].name}</div>
+              <button className="focus-panel__close" onClick={() => setSel(null)}>×</button>
+            </div>
+            <div className="focus-panel__lbl">Why it's dangerous</div>
+            <div className="focus-panel__txt">{FOCUS_POINTS[sel - 1].danger}</div>
+            <div className="focus-panel__lbl focus-panel__lbl--goal">Training goal</div>
+            <div className="focus-panel__txt">{FOCUS_POINTS[sel - 1].goal}</div>
+          </>
+        )}
       </div>
-
-      {/* length / distance */}
-      <div className="ld">
-        <div className="ld-item">
-          <div className="ld-lbl">LENGTH</div>
-          <div className="ld-bar" />
-          <div className="ld-val">7.004 KM</div>
-        </div>
-        <div className="ld-item">
-          <div className="ld-lbl">DISTANCE</div>
-          <div className="ld-bar" />
-          <div className="ld-val">308.176 KM</div>
-        </div>
-      </div>
-
-      {/* focus-point explanation panel */}
-      {view === 'focus' && sel != null && (
-        <div className="focus-panel">
-          <div className="focus-panel__head">
-            <span className="focus-panel__num">{sel}</span>
-            <div className="focus-panel__name">{FOCUS_POINTS[sel - 1].name}</div>
-            <button className="focus-panel__close" onClick={() => setSel(null)}>×</button>
-          </div>
-          <div className="focus-panel__lbl">Why it's dangerous</div>
-          <div className="focus-panel__txt">{FOCUS_POINTS[sel - 1].danger}</div>
-          <div className="focus-panel__lbl focus-panel__lbl--goal">Training goal</div>
-          <div className="focus-panel__txt">{FOCUS_POINTS[sel - 1].goal}</div>
-        </div>
-      )}
-
-      {/* pill buttons — switch the track view */}
-      <button
-        className={'dash-pill dash-pill--1' + (view === 'focus' ? ' dash-pill--active' : '')}
-        onClick={() => {
-          setSel(null)
-          setView((v) => (v === 'focus' ? 'default' : 'focus'))
-        }}
-      >
-        Mental Focus Points
-      </button>
-      <button
-        className={'dash-pill dash-pill--2' + (view === 'default' ? ' dash-pill--active' : '')}
-        onClick={() => {
-          setSel(null)
-          setView('default')
-        }}
-      >
-        Cognitive Load
-      </button>
     </>
   )
 }
 
 /* ================= SLIDE-IN SCHEDULE OVERLAY ================= */
-const OVERLAY_SESSIONS = [
-  { start: '08:00', title: 'Breakfast', type: 'meal', location: 'Dining Area' },
-  { start: '09:00', title: 'Simulator Training', type: 'simulator', location: 'Simulator Room N.1', goal: { title: 'Focus under pressure', sub: 'Errors increase under cognitive load', score: 73 } },
-  { start: '11:00', title: 'Physical Training', type: 'training', location: 'Performance Gym', goal: { title: 'Increase neck stability', sub: 'Reduced stability under sustained G-force load', score: 81 } },
-  { start: '13:00', title: 'Lunch', type: 'meal', location: 'Dining Area' },
-  { start: '14:00', title: 'Medical Check-Up', type: 'medical', location: 'Medical Room' },
-  { start: '15:00', title: 'Cognitive Training', type: 'training', location: 'Performance Gym' },
+const DEFAULT_SESSIONS = [
+  { start: '08:00', title: 'Breakfast', type: 'meal', location: 'Dining Area', height: 109 },
+  {
+    start: '09:00',
+    title: 'Simulator  Training',
+    type: 'simulator',
+    location: 'Simulator room N.1',
+    light: true,
+    height: 166,
+    goal: { title: 'Focus under pressure', sub: 'Errors increase under cognitive load', score: 73 },
+  },
+  {
+    start: '10:30',
+    title: 'Physical Training      ',
+    type: 'training',
+    location: 'Performance Gym',
+    height: 166,
+    goal: { title: 'Increase neck stability', sub: 'Reduced G-force stability', score: 23 },
+  },
+  { start: '12:00', title: 'Lunch', type: 'meal', location: 'Dining Area', height: 109 },
+  { start: '13:00', title: 'Medical Check-Up', type: 'medical', location: 'Medical Room', height: 109 },
+  {
+    start: '14:00',
+    title: 'Cognitive training ',
+    type: 'training',
+    location: 'Performance Gym',
+    height: 166,
+    goal: { title: 'Focus under pressure', sub: 'Errors increase cognitive load.', score: 96 },
+  },
+  { start: '15:30', title: 'Neck Strength ', type: 'medical', location: 'Medical Room', height: 109 },
+  { start: '16:30', title: 'Ice Bath', type: 'icebath', location: 'Performance Gym', height: 109 },
+  { start: '17:30', title: 'Performance Debrief', type: 'debrief', location: 'Class 2', height: 109 },
+  { start: '18:30', title: 'Dinner', type: 'meal', location: 'Dining Area' },
 ]
 
 function ScheduleOverlay({ onClose }) {
-  const OV_HH = 92
+  const OV_HH = 114
   const OV_PAD = 14
   const toH = (t) => t.split(':').map(Number).reduce((h, m) => h + m / 60)
   const top = (t) => OV_PAD + (t - 8) * OV_HH
-  const now = 9.5
-  const hours = [8, 9, 10, 11, 12, 13, 14, 15]
+
+  // sorts by start time and pushes any later item down so cards never overlap
+  // (keeps a 5px gap) — this is what makes "add a new item" ripple through the rest
+  const normalize = (list) => {
+    const sorted = [...list].sort((a, b) => toH(a.start) - toH(b.start))
+    let prevBottom = null
+    return sorted.map((s) => {
+      const height = s.height ?? (s.goal ? 179 : 113)
+      let startH = toH(s.start)
+      let topPx = top(startH)
+      if (prevBottom != null && topPx < prevBottom + 5) {
+        topPx = prevBottom + 5
+        startH = 8 + (topPx - OV_PAD) / OV_HH
+      }
+      prevBottom = topPx + height
+      const hh = Math.floor(startH)
+      const mm = +((startH - hh) * 60).toFixed(2)
+      return { ...s, start: `${hh}:${mm}`, height }
+    })
+  }
+
+  const [sessions, setSessions] = useState(() => normalize(DEFAULT_SESSIONS))
+  const [adding, setAdding] = useState(false)
+  const [form, setForm] = useState({
+    typeValue: SCHEDULE_TYPES[0].value,
+    location: SCHEDULE_TYPES[0].location,
+    hour: 8,
+    minute: 0,
+  })
+
+  const starts = sessions.map((s) => toH(s.start))
+  const maxBottom = sessions.length
+    ? Math.max(...sessions.map((s, i) => top(starts[i]) + s.height))
+    : top(20)
+  const maxHour = Math.max(20, Math.ceil((maxBottom - OV_PAD) / OV_HH + 8)) // "add more hours" if the schedule runs past 20:00
+  const hours = Array.from({ length: maxHour - 8 + 1 }, (_, i) => 8 + i)
+  const wheelHours = Array.from({ length: 17 }, (_, i) => 6 + i) // 06:00 – 22:00
+
+  const submitAdd = (e) => {
+    e.preventDefault()
+    const opt = SCHEDULE_TYPES.find((t) => t.value === form.typeValue)
+    if (!opt) return
+    const start = `${form.hour}:${String(form.minute).padStart(2, '0')}`
+    setSessions((prev) =>
+      normalize([...prev, { start, title: opt.label, type: opt.icon, location: form.location }])
+    )
+    setAdding(false)
+  }
 
   return (
     <div className="ov-inner-wrap">
       <div className="ov-head">
         <button className="ov-close" onClick={onClose}>×</button>
-        <div className="ov-title">
-          Daily Schedule <b>Tuesday</b>
-        </div>
-        <div className="ov-goals">
-          Daily goals <span>0/3</span>
-        </div>
-        <button className="ov-add">+</button>
+        <div className="ov-title">Daily Schedule</div>
+        <div className="ov-goals">Goals&nbsp;&nbsp;0/3</div>
+        <button className="ov-add" onClick={() => setAdding(true)}>+</button>
       </div>
 
+      {adding && (
+        <div className="ov-add-backdrop" onClick={() => setAdding(false)}>
+          <form className="ov-add-form" onClick={(e) => e.stopPropagation()} onSubmit={submitAdd}>
+            <div className="ov-add-title">New schedule item</div>
+
+            <label className="ov-add-lbl">
+              Type
+              <select
+                className="ov-add-input"
+                value={form.typeValue}
+                onChange={(e) => {
+                  const v = e.target.value
+                  const opt = SCHEDULE_TYPES.find((t) => t.value === v)
+                  setForm((f) => ({ ...f, typeValue: v, location: opt ? opt.location : f.location }))
+                }}
+              >
+                <optgroup label="Training">
+                  {SCHEDULE_TYPES.filter((t) => t.category === 'Training').map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Break & Recovery">
+                  {SCHEDULE_TYPES.filter((t) => t.category === 'Break & Recovery').map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </label>
+
+            <label className="ov-add-lbl">
+              Location
+              <select
+                className="ov-add-input"
+                value={form.location}
+                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              >
+                {SCHEDULE_LOCATIONS.map((loc) => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="ov-add-lbl">
+              Time
+              <div className="wheel-row">
+                <WheelPicker
+                  options={wheelHours}
+                  value={form.hour}
+                  onChange={(h) => setForm((f) => ({ ...f, hour: h }))}
+                  format={(h) => String(h).padStart(2, '0')}
+                />
+                <div className="wheel-colon">:</div>
+                <WheelPicker
+                  options={[0, 30]}
+                  value={form.minute}
+                  onChange={(m) => setForm((f) => ({ ...f, minute: m }))}
+                  format={(m) => String(m).padStart(2, '0')}
+                />
+              </div>
+            </label>
+
+            <div className="ov-add-actions">
+              <button type="button" className="ov-add-cancel" onClick={() => setAdding(false)}>Cancel</button>
+              <button type="submit" className="ov-add-submit">Add</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="ov-scroll">
-        <div className="ov-track" style={{ height: top(16) }}>
+        <div className="ov-track" style={{ height: top(hours[hours.length - 1] + 1) }}>
+          <div className="ov-rail" />
           {hours.map((h) => (
             <div key={h} className="ov-time" style={{ top: top(h) - 7 }}>
               {String(h).padStart(2, '0')}:00
             </div>
           ))}
-          <div className="ov-play" style={{ top: top(now) }} />
 
-          {OVERLAY_SESSIONS.map((s, i) => {
+          {sessions.map((s, i) => {
             const [src, size] = ICONS[s.type]
             return (
-              <div key={i} className="ov-card" style={{ top: top(toH(s.start)), height: s.goal ? 148 : 84 }}>
+              <div
+                key={i}
+                className={'ov-card' + (s.light ? ' ov-card--light' : '')}
+                style={{ top: top(starts[i]), height: s.height }}
+              >
                 <div className="ov-card__row">
+                  <img
+                    className="ov-card__icon"
+                    src={src}
+                    alt=""
+                    style={{ width: size, height: size }}
+                  />
                   <span className="ov-card__title">{s.title}</span>
-                  <img className="ov-card__icon" src={src} alt="" style={{ width: size, height: size }} />
                 </div>
                 <div className="ov-card__sub">{s.location}</div>
                 {s.goal && (
-                  <div className="ov-goal">
+                  <div className={'ov-goal' + (s.light ? ' ov-goal--dark' : '')}>
                     <div className="ov-goal__title">{s.goal.title}</div>
                     <div className="ov-goal__sub">{s.goal.sub}</div>
                     <div className="ov-goal__score">
@@ -1205,23 +1142,15 @@ function ScheduleOverlay({ onClose }) {
   )
 }
 
-const PANEL_W = 354
+const PANEL_W = 326
 const clampV = (v, a, b) => Math.max(a, Math.min(b, v))
 
 export default function App() {
   const [stage, setStage] = useState('intro') // 'intro' | 'login' | 'app'
-  const [selectedDay, setSelectedDay] = useState(() => {
-    const q = Number(new URLSearchParams(window.location.search).get('day'))
-    return q >= 1 && q <= VISIBLE_UNTIL ? q : TODAY
-  })
-  const [edits, setEdits] = useState({}) // day -> { items }
-  const [menu, setMenu] = useState(null) // open action menu: index
-  const [picker, setPicker] = useState(null) // open activity picker: index | 'new'
-  const [newTime, setNewTime] = useState(12) // chosen start time (hours) for a new session
   const [screen, setScreen] = useState(() => {
     const s = new URLSearchParams(window.location.search).get('screen')
-    return s === 'training' || s === 'dashboard' ? s : 'schedule'
-  }) // 'schedule' | 'training' | 'dashboard'
+    return s === 'training' ? s : 'dashboard'
+  }) // 'training' | 'dashboard'
 
   // right-edge slide-in schedule overlay (works on every screen)
   const [ovOpen, setOvOpen] = useState(false)
@@ -1289,73 +1218,6 @@ export default function App() {
     }
   }, [])
 
-  const status = dayStatus(selectedDay)
-  const isPast = status === 'past'
-  const editable = !isPast
-  const schedule = edits[selectedDay] || buildSchedule(scheduleForDay(selectedDay))
-
-  const closeOverlays = () => {
-    setMenu(null)
-    setPicker(null)
-  }
-  const pickDay = (d) => {
-    closeOverlays()
-    setSelectedDay(d)
-  }
-  const items = schedule.items
-  // store items always sorted by start time
-  const commit = (next) =>
-    setEdits({ ...edits, [selectedDay]: { items: [...next].sort((a, b) => a.start - b.start) } })
-
-  const deleteItem = (i) => {
-    commit(items.map((it, j) => (j === i ? { start: it.start, dur: it.dur, empty: true } : it)))
-    setMenu(null)
-  }
-  // remove a slot and pull everything after it earlier -> the day finishes sooner
-  const removeSlot = (i) => {
-    const removed = items[i]
-    commit(
-      items
-        .filter((_, j) => j !== i)
-        .map((it) => (it.start > removed.start ? { ...it, start: it.start - removed.dur } : it))
-    )
-  }
-  const setActivity = (target, act) => {
-    let next
-    if (target === 'new') {
-      // insert at the chosen time: push everything at/after it later, so the day grows
-      const D = 1
-      next = items.map((it) => {
-        if (it.start >= newTime) return { ...it, start: it.start + D } // pushed down
-        if (it.start + it.dur > newTime) return { ...it, dur: newTime - it.start } // clip the one it splits
-        return it
-      })
-      next.push({ start: newTime, dur: D, ...act })
-    } else {
-      next = items.map((it, j) => (j === target ? { start: it.start, dur: it.dur, ...act } : it))
-    }
-    commit(next)
-    closeOverlays()
-  }
-
-  // time-aligned layout: position each item by its explicit start time
-  const firstHour = items.length ? Math.floor(items[0].start) : 7
-  let lastEnd = firstHour + 1
-  const placed = items.map((it) => {
-    lastEnd = Math.max(lastEnd, it.start + it.dur)
-    return {
-      it,
-      start: it.start,
-      top: PAD_TOP + (it.start - firstHour) * HOUR_H,
-      height: Math.max(it.empty ? 64 : 90, it.dur * HOUR_H - CARD_GAP),
-    }
-  })
-  const lastHour = Math.ceil(lastEnd)
-  const railHours = []
-  for (let h = firstHour; h <= lastHour; h++) railHours.push(h)
-  const railTop = (h) => PAD_TOP + (h - firstHour) * HOUR_H
-  const innerHeight = railTop(lastHour) + 30
-
   return (
     <>
       {stage === 'intro' && <LoadingScreen onDone={() => setStage('login')} />}
@@ -1364,157 +1226,8 @@ export default function App() {
       <div className="screen">
         {screen === 'training' ? (
           <TrainingScreen onNav={setScreen} />
-        ) : screen === 'dashboard' ? (
-          <DashboardScreen onNav={setScreen} />
         ) : (
-          <>
-        {/* ================= HEADER ================= */}
-        <img className="logo" src={`${A}/c1logo.svg`} alt="C1" />
-        <div className="brand">Daily Overview</div>
-
-        <Nav active="schedule" onNav={setScreen} />
-
-        <div className="coach">C.STEVE CARTER</div>
-        <img className="avatar" src={`${A}/avatar.png`} alt="Charles Leclerc" />
-
-        <h1 className="title">July {selectedDay} / {weekdayName(selectedDay)}</h1>
-
-        {/* ================= MAIN CONTENT ================= */}
-        <div className="main">
-          {/* ---- left timeline panel (scrollable) ---- */}
-          <div className="timeline">
-            {editable && (
-              <button
-                className="day-add"
-                title="Add session"
-                onClick={() => {
-                  setNewTime(lastEnd <= 22 ? lastEnd : 22)
-                  setPicker('new')
-                }}
-              >
-                +
-              </button>
-            )}
-            <div className="timeline__scroll">
-              <div className="timeline__inner" style={{ height: innerHeight }}>
-                {/* hour rail: full hour + a half-hour dash between hours */}
-                {railHours.map((h) => (
-                  <div key={'h' + h} className="rail-hour" style={{ top: railTop(h) - 7 }}>
-                    {String(h).padStart(2, '0')}:00
-                  </div>
-                ))}
-                {railHours.slice(0, -1).map((h) => (
-                  <span key={'d' + h} className="rail-half" style={{ top: railTop(h) + HOUR_H / 2 }} />
-                ))}
-
-                {placed.map(({ it, start, top, height }, i) =>
-                  it.empty ? (
-                    <EmptySlot
-                      key={i}
-                      time={hoursToHM(start)}
-                      top={top}
-                      height={height}
-                      onAdd={() => setPicker(i)}
-                      onRemove={() => removeSlot(i)}
-                    />
-                  ) : (
-                    <SessionCard
-                      key={i}
-                      s={it}
-                      time={hoursToHM(start)}
-                      top={top}
-                      height={height}
-                      done={isPast}
-                      editable={editable}
-                      menuOpen={menu === i}
-                      onOpen={() => setMenu(menu === i ? null : i)}
-                      onChange={() => { setMenu(null); setPicker(i) }}
-                      onDelete={() => deleteItem(i)}
-                    />
-                  )
-                )}
-
-                {/* click-away layer to dismiss the action menu */}
-                {menu !== null && <div className="edit-backdrop" onClick={() => setMenu(null)} />}
-              </div>
-            </div>
-
-            {/* activity picker modal */}
-            {picker !== null && (
-              <div className="picker">
-                <div className="picker__backdrop" onClick={() => setPicker(null)} />
-                <div className="picker__panel">
-                  <div className="picker__head">
-                    {picker === 'new' ? 'Add session' : 'Choose activity'}
-                  </div>
-                  {picker === 'new' && (
-                    <label className="picker__time">
-                      <span>Time</span>
-                      <select value={newTime} onChange={(e) => setNewTime(Number(e.target.value))}>
-                        {TIME_OPTIONS.map((t) => (
-                          <option key={t} value={t}>
-                            {hoursToHM(t)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                  <div className="picker__grid">
-                    {ACTIVITIES.map((a) => {
-                      const [src, size] = ICONS[a.type]
-                      return (
-                        <button key={a.title} className="picker__item" onClick={() => setActivity(picker, a)}>
-                          <img src={src} alt="" style={{ width: size, height: size }} />
-                          <span>{a.title}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <button className="picker__cancel" onClick={() => setPicker(null)}>Cancel</button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ---- right calendar (clickable) ---- */}
-          <div className="calendar">
-            <div className="calendar__month">july</div>
-            <div className="calendar__week">
-              {WEEKDAYS.map((d) => (
-                <span key={d}>{d}</span>
-              ))}
-            </div>
-            <div className="calendar__grid">
-              {CAL_ROWS.map((row, ri) => (
-                <div key={ri} className="calendar__row">
-                  {row.map((d, ci) => {
-                    if (!d) return <span key={ci} className="calendar__day calendar__day--empty" />
-                    const locked = d > VISIBLE_UNTIL
-                    return (
-                      <button
-                        key={ci}
-                        disabled={locked}
-                        className={
-                          'calendar__day' +
-                          ' calendar__day--' + dayStatus(d) +
-                          (RED_DAYS.includes(d) && d !== selectedDay ? ' calendar__day--red' : '') +
-                          (d === TODAY && d !== selectedDay ? ' calendar__day--today' : '') +
-                          (d === selectedDay ? ' calendar__day--selected' : '') +
-                          (locked ? ' calendar__day--locked' : '')
-                        }
-                        onClick={() => !locked && pickDay(d)}
-                      >
-                        {d}
-                      </button>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-          </>
+          <DashboardScreen onNav={setScreen} />
         )}
 
         {/* right-edge slide-in schedule overlay (available on every screen) */}

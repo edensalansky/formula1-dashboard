@@ -1,12 +1,62 @@
-import { Suspense, useMemo, useRef, useState, useLayoutEffect } from 'react'
-import { Canvas, useLoader } from '@react-three/fiber'
+import { Suspense, useMemo, useRef, useState, useLayoutEffect, useEffect } from 'react'
+import { Canvas, useLoader, useFrame, useThree } from '@react-three/fiber'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { useTexture, Environment, Lightformer, OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 const M = '/models'
+const DEFAULT_CAM_POS = new THREE.Vector3(0.4, 6.4, 8.6)
+const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0)
+const TRANSITION_MS = 700
 
-function TrackModel({ mode, selected, onSelectPoint }) {
+// eases the camera into a close-up on the selected marker (or back out to the
+// default framing) over a fixed, short transition, then lets go completely —
+// after that OrbitControls owns the camera outright, so the user can freely
+// spin/drag the track at any time without the rig fighting their input
+function CameraRig({ selected, markers, controlsRef }) {
+  const { camera } = useThree()
+  const anim = useRef(null)
+
+  useEffect(() => {
+    const controls = controlsRef.current
+    if (!controls) return
+    const marker = selected != null ? markers.find((m) => m.n === selected) : null
+    let toPos, toTarget
+    if (marker) {
+      toTarget = new THREE.Vector3(...marker.pos)
+      const dir = toTarget.clone().sub(DEFAULT_TARGET)
+      if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1)
+      dir.normalize()
+      toPos = toTarget.clone().add(dir.multiplyScalar(2.4)).add(new THREE.Vector3(0, 1.1, 0))
+    } else {
+      toPos = DEFAULT_CAM_POS.clone()
+      toTarget = DEFAULT_TARGET.clone()
+    }
+    anim.current = {
+      fromPos: camera.position.clone(),
+      fromTarget: controls.target.clone(),
+      toPos,
+      toTarget,
+      start: performance.now(),
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, markers])
+
+  useFrame(() => {
+    const controls = controlsRef.current
+    const a = anim.current
+    if (!controls || !a) return
+    const t = Math.min(1, (performance.now() - a.start) / TRANSITION_MS)
+    const e = 1 - Math.pow(1 - t, 3) // ease-out cubic
+    camera.position.lerpVectors(a.fromPos, a.toPos, e)
+    controls.target.lerpVectors(a.fromTarget, a.toTarget, e)
+    controls.update()
+    if (t >= 1) anim.current = null // transition done — hand full control back to OrbitControls
+  })
+  return null
+}
+
+function TrackModel({ mode, selected, onSelectPoint, onMarkers }) {
   const fbx = useLoader(FBXLoader, `${M}/track.fbx`)
   const [baseMap, metalMap, roughMap, normalMap, emisMap] = useTexture([
     `${M}/track_basecolor.png`,
@@ -94,7 +144,9 @@ function TrackModel({ mode, selected, onSelectPoint }) {
         m.z += 0.12
         return [m.x, m.y, m.z]
       })
-    setMarkers(found.map((pos, i) => ({ pos, n: i + 1 })))
+    const next = found.map((pos, i) => ({ pos, n: i + 1 }))
+    setMarkers(next)
+    onMarkers?.(next)
   }, [model])
 
   return (
@@ -125,6 +177,9 @@ function TrackModel({ mode, selected, onSelectPoint }) {
 }
 
 export default function Track3D({ mode = 'default', selected = null, onSelectPoint = () => {} }) {
+  const controlsRef = useRef()
+  const [markers, setMarkers] = useState([])
+
   return (
     <div className="track-3d">
       <Canvas
@@ -136,7 +191,7 @@ export default function Track3D({ mode = 'default', selected = null, onSelectPoi
         <directionalLight position={[6, 9, 6]} intensity={1.8} />
         <directionalLight position={[-6, 3, -4]} intensity={0.8} />
         <Suspense fallback={null}>
-          <TrackModel mode={mode} selected={selected} onSelectPoint={onSelectPoint} />
+          <TrackModel mode={mode} selected={selected} onSelectPoint={onSelectPoint} onMarkers={setMarkers} />
           <Environment resolution={256}>
             <Lightformer intensity={2.4} position={[0, 6, -6]} scale={[12, 12, 1]} />
             <Lightformer intensity={1.1} position={[-6, 2, 2]} scale={[10, 3, 1]} />
@@ -144,15 +199,17 @@ export default function Track3D({ mode = 'default', selected = null, onSelectPoi
             <Lightformer intensity={0.8} position={[0, -4, 3]} scale={[10, 4, 1]} />
           </Environment>
         </Suspense>
+        <CameraRig selected={selected} markers={markers} controlsRef={controlsRef} />
         <OrbitControls
+          ref={controlsRef}
           makeDefault
           enablePan={false}
           enableDamping
           dampingFactor={0.08}
           rotateSpeed={0.9}
-          autoRotate
+          autoRotate={selected == null}
           autoRotateSpeed={0.6}
-          minDistance={4}
+          minDistance={2}
           maxDistance={16}
         />
       </Canvas>
