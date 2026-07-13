@@ -5,9 +5,9 @@ import { useTexture, Environment, Lightformer, OrbitControls, Html } from '@reac
 import * as THREE from 'three'
 
 const M = '/models'
-const DEFAULT_CAM_POS = new THREE.Vector3(0.4, 6.4, 8.6)
+const DEFAULT_CAM_POS = new THREE.Vector3(0.3, 4.8, 6.45)
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0)
-const TRANSITION_MS = 700
+const TRANSITION_MS = 1500
 
 // eases the camera into a close-up on the selected marker (or back out to the
 // default framing) over a fixed, short transition, then lets go completely —
@@ -128,22 +128,67 @@ function TrackModel({ mode, selected, onSelectPoint, onMarkers }) {
     const thin = sz.x <= sz.y && sz.x <= sz.z ? 'x' : sz.y <= sz.z ? 'y' : 'z'
     const [a0, a1] = ['x', 'y', 'z'].filter((a) => a !== thin)
 
+    // the track mesh has real thickness (a wall/barrier cross-section), so picking
+    // purely the outermost point per bucket can land on its side face instead of
+    // the top — bias selection toward the top of the local cross-section too, so
+    // the marker's anchor (and its dot) actually sits on the visible top surface
+    let thinMin = Infinity
+    let thinMax = -Infinity
+    let maxD = 0
+    pts.forEach((p) => {
+      if (p[thin] < thinMin) thinMin = p[thin]
+      if (p[thin] > thinMax) thinMax = p[thin]
+      const d = Math.hypot(p[a0] - c0[a0], p[a1] - c0[a1])
+      if (d > maxD) maxD = d
+    })
+    const thinRange = Math.max(1e-6, thinMax - thinMin)
+    const heightWeight = maxD * 0.6
+
     const N = 6
     const buckets = new Array(N).fill(null)
     pts.forEach((p) => {
       const ang = Math.atan2(p[a1] - c0[a1], p[a0] - c0[a0])
       const idx = Math.floor(((ang + Math.PI) / (2 * Math.PI)) * N) % N
       const d = Math.hypot(p[a0] - c0[a0], p[a1] - c0[a1])
-      if (!buckets[idx] || d > buckets[idx].d) buckets[idx] = { p: p.clone(), d }
+      const heightNorm = (p[thin] - thinMin) / thinRange // 0 (bottom) .. 1 (top)
+      const score = d + heightNorm * heightWeight
+      if (!buckets[idx] || score > buckets[idx].score) buckets[idx] = { p: p.clone(), score }
     })
     const found = buckets
       .filter(Boolean)
       .map((b) => {
-        // sit right on the track edge, nudged a touch toward the viewer so it reads on the surface
+        // sit right on the track edge — nudge outward from the track's own center in
+        // the ground plane (not a fixed world axis), plus a small lift along the thin
+        // axis, so the dot hugs the surface from every angle instead of only the one
+        // the fixed +Z nudge used to face
         const m = b.p.clone()
-        m.z += 0.12
+        const dx = m[a0] - c0[a0]
+        const dy = m[a1] - c0[a1]
+        const len = Math.hypot(dx, dy) || 1
+        m[a0] += (dx / len) * 0.08
+        m[a1] += (dy / len) * 0.08
+        m[thin] += 0.04
         return [m.x, m.y, m.z]
       })
+    // some neighboring buckets (1&6 across the angle wrap-around, 4&5 next to
+    // each other) can end up very close together — nudge each pair apart along
+    // the line between them. Kept small: too big a push moves a point clean off
+    // the track surface since the mesh cross-section is thin.
+    const pushApart = (i, j, push) => {
+      if (found.length <= Math.max(i, j)) return
+      const a = new THREE.Vector3(...found[i])
+      const b = new THREE.Vector3(...found[j])
+      const mid = a.clone().add(b).multiplyScalar(0.5)
+      const dir = a.clone().sub(b)
+      if (dir.lengthSq() < 1e-6) return
+      dir.normalize()
+      const newA = mid.clone().add(dir.clone().multiplyScalar(push))
+      const newB = mid.clone().sub(dir.clone().multiplyScalar(push))
+      found[i] = [newA.x, newA.y, newA.z]
+      found[j] = [newB.x, newB.y, newB.z]
+    }
+    pushApart(0, 5, 0.15) // markers 1 & 6
+    pushApart(3, 4, 0.15) // markers 4 & 5
     const next = found.map((pos, i) => ({ pos, n: i + 1 }))
     setMarkers(next)
     onMarkers?.(next)
@@ -156,7 +201,7 @@ function TrackModel({ mode, selected, onSelectPoint, onMarkers }) {
       </group>
       {mode === 'focus' &&
         markers.map((m) => (
-          <Html key={m.n} position={m.pos} zIndexRange={[20, 0]}>
+          <Html key={m.n} position={m.pos} occlude={false} zIndexRange={[100, 90]}>
             <div className="focus-pt-wrap">
               <span className="focus-pt__dot" />
               <button
@@ -183,7 +228,7 @@ export default function Track3D({ mode = 'default', selected = null, onSelectPoi
   return (
     <div className="track-3d">
       <Canvas
-        camera={{ position: [0.4, 6.4, 8.6], fov: 34 }}
+        camera={{ position: [0.3, 4.8, 6.45], fov: 34 }}
         gl={{ alpha: true, antialias: true, toneMappingExposure: 1.25 }}
         dpr={[1, 2]}
       >
@@ -208,7 +253,7 @@ export default function Track3D({ mode = 'default', selected = null, onSelectPoi
           dampingFactor={0.08}
           rotateSpeed={0.9}
           autoRotate={selected == null}
-          autoRotateSpeed={0.6}
+          autoRotateSpeed={0.25}
           minDistance={2}
           maxDistance={16}
         />

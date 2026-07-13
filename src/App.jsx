@@ -796,36 +796,41 @@ function TrainingScreen({ onNav }) {
 
 /* ================= DASHBOARD ================= */
 // Mental-focus corners (Spa) — danger + the training goal to prepare the driver
+// each corner's training goal is written to match one of the two goal names
+// that actually appear in today's schedule ("Focus under pressure" from
+// Simulator/Cognitive training, "Increase neck stability" from Physical
+// Training) — so the track view and the schedule read as one system, not
+// two disconnected screens.
 const FOCUS_POINTS = [
   {
     name: 'Eau Rouge / Raidillon',
-    danger: 'Blind uphill left-right-left taken near flat-out — huge vertical + lateral compression at ~290 km/h.',
-    goal: 'Neck & core strength for sustained 4–5 G loading, and visual commitment training to stay flat over the blind crest.',
+    danger: 'Blind uphill left-right-left taken near flat-out, with huge vertical and lateral compression at ~290 km/h.',
+    goal: 'Builds "Increase neck stability". The blind uphill compression here loads the neck harder than anywhere else on this track, which is exactly what today\'s Physical Training session is preparing him for.',
   },
   {
     name: 'Les Combes',
-    danger: 'Heavy braking from top speed into a tight right-left after the Kemmel straight — a classic lock-up / overtaking spot.',
-    goal: 'Braking-point consistency and reaction accuracy while heart-rate is still elevated from the straight.',
+    danger: 'Heavy braking from top speed into a tight right-left after the Kemmel straight, a classic lock-up / overtaking spot.',
+    goal: 'Builds "Focus under pressure". Braking late here with heart rate still spiking from the straight is the same reaction-under-load skill Cognitive training is scoring today.',
   },
   {
     name: 'Pouhon',
-    danger: 'Fast downhill double-left held at high speed — long, sustained lateral load that fatigues the neck.',
-    goal: 'Neck endurance and controlled breathing under prolonged lateral G to hold a precise line.',
+    danger: 'Fast downhill double-left held at high speed, with a long, sustained lateral load that fatigues the neck.',
+    goal: 'Builds "Increase neck stability". The long, sustained lateral load through this double-left is the exact endurance target of Physical Training.',
   },
   {
     name: 'Rivage / Bruxelles',
-    danger: 'Tight downhill hairpin with a blind entry — easy to run wide or lock the inside front.',
-    goal: 'Trail-braking precision and patience on entry; smooth throttle pick-up to protect the front tyres.',
+    danger: 'Tight downhill hairpin with a blind entry, easy to run wide or lock the inside front.',
+    goal: 'Builds "Focus under pressure". The blind entry demands the same trail-braking precision and patience Cognitive training is built around.',
   },
   {
     name: 'Blanchimont',
-    danger: 'Near-flat high-speed left with little run-off — one of the highest-risk corners on the calendar.',
-    goal: 'Mental commitment and focus stability at high speed; steady heart-rate to avoid any hesitation.',
+    danger: 'Near-flat high-speed left with little run-off, one of the highest-risk corners on the calendar.',
+    goal: 'Builds "Focus under pressure". Holding this corner flat without lifting is a pure test of the mental commitment Cognitive training targets.',
   },
   {
     name: 'Bus Stop Chicane',
-    danger: 'Hard braking into a tight left-right over the kerbs to end the lap — high cognitive load and lock-up risk.',
-    goal: 'Quick, precise direction change and cognitive-load management to nail the final braking zone every lap.',
+    danger: 'Hard braking into a tight left-right over the kerbs to end the lap, with high cognitive load and lock-up risk.',
+    goal: 'Builds "Focus under pressure". The high cognitive load of this final chicane is exactly what Cognitive training is preparing him for.',
   },
 ]
 
@@ -834,6 +839,15 @@ function DashboardScreen({ onNav }) {
   const [remain, setRemain] = useState(11 * 86400 + 2 * 3600 + 32 * 60 + 24) // Belgium GP countdown (sec)
   useEffect(() => {
     const id = setInterval(() => setRemain((r) => Math.max(0, r - 1)), 1000)
+    return () => clearInterval(id)
+  }, [])
+  // readiness score drifts by a point or two every couple seconds — reads as a
+  // live bracelet feed rather than a number frozen on the screen
+  const [readyPct, setReadyPct] = useState(83)
+  useEffect(() => {
+    const id = setInterval(() => {
+      setReadyPct((p) => Math.max(78, Math.min(90, p + (Math.random() < 0.5 ? -1 : 1))))
+    }, 2200)
     return () => clearInterval(id)
   }, [])
   const p2 = (n) => String(n).padStart(2, '0')
@@ -851,12 +865,12 @@ function DashboardScreen({ onNav }) {
       <Nav active="dashboard" onNav={onNav} />
       <div className="sh-avatar">SH</div>
 
-      <h1 className="dash-hi">Good morning Steve!</h1>
-      <div className="dash-sub">Here's your dashboard for today</div>
-
-      {/* driver status + next race — slide fully off-frame to the left when a
+      {/* everything except the logo/nav/avatar slides fully off-frame to the left when a
           track point is selected, so only the track and its close-up data show */}
       <div className={'dash-left-col' + (sel != null ? ' dash-left-col--hidden' : '')}>
+        <h1 className="dash-hi">Good morning Steve!</h1>
+        <div className="dash-sub">Here's your dashboard for today</div>
+
         <div className="drv-section-title">Driver Status</div>
 
         {/* driver ID card (Figma 1844:280) */}
@@ -866,27 +880,36 @@ function DashboardScreen({ onNav }) {
           <div className="drv2-team">Monaco | Ferrari |</div>
           <div className="drv2-num">16</div>
           <div className="drv2-stats">
-            <p>Age 27</p>
-            <p>Weight 68kg</p>
-            <p>Height 1.80m</p>
+            <p>Age | 27</p>
+            <p>Weight | 68kg</p>
+            <p>Height | 1.80m</p>
           </div>
 
           <div className="drv2-gauge">
-            <img className="drv2-vec drv2-vec21" src={`${A}/drv-vec21.svg`} alt="" />
-            <img className="drv2-vec drv2-vec22" src={`${A}/drv-vec22.svg`} alt="" />
-            <img className="drv2-vec drv2-vec23" src={`${A}/drv-vec23.svg`} alt="" />
-            <img className="drv2-vec drv2-vec24" src={`${A}/drv-vec24.svg`} alt="" />
             <div className="drv2-ring">
               <img className="drv2-ring-outer" src={`${A}/drv-ellipse-outer.svg`} alt="" />
-              <img className="drv2-ring-iso" src={`${A}/drv-isolation.svg`} alt="" />
-              <img className="drv2-ring-inner" src={`${A}/drv-ellipse-inner.svg`} alt="" />
+              <div className="drv2-ring-progress" style={{ '--pct': readyPct }} />
               <div className="drv2-stable">Stable</div>
-              <div className="drv2-pct">83 %</div>
+              <div className="drv2-pct">{readyPct} %</div>
             </div>
-            <div className="drv2-lbl drv2-lbl-bpm">BPM</div>
-            <div className="drv2-lbl drv2-lbl-hyd">Hydration</div>
-            <div className="drv2-lbl drv2-lbl-focus">focus</div>
-            <div className="drv2-lbl drv2-lbl-stress">stress</div>
+            <div className="drv2-stats-grid">
+              <div className="drv2-stat">
+                <span className="drv2-stat__lbl">BPM</span>
+                <span className="drv2-stat__val">62</span>
+              </div>
+              <div className="drv2-stat">
+                <span className="drv2-stat__lbl">Hydration</span>
+                <span className="drv2-stat__val">92%</span>
+              </div>
+              <div className="drv2-stat">
+                <span className="drv2-stat__lbl">Focus</span>
+                <span className="drv2-stat__val">81%</span>
+              </div>
+              <div className="drv2-stat">
+                <span className="drv2-stat__lbl">Stress</span>
+                <span className="drv2-stat__val drv2-stat__val--good">Low</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -895,7 +918,7 @@ function DashboardScreen({ onNav }) {
         {/* next race card (Figma 1848:1276) */}
         <div className="race-card">
           <div className="race-track">SPA - FRANCORCHAMPS</div>
-          <div className="race-date">belgium 17-19 Jul</div>
+          <div className="race-date">Belgium 17-19 Jul</div>
           <div className="race-countdown">{d}d : {p2(h)}h : {p2(m)}m : {p2(s)}s</div>
           <div className="race-lap">
             <div className="race-stat-lbl">Lap Length</div>
@@ -967,6 +990,7 @@ const DEFAULT_SESSIONS = [
 function ScheduleOverlay({ onClose }) {
   const OV_HH = 114
   const OV_PAD = 14
+  const NOW_TIME = 9 + 40 / 60 // system time — 9:40
   const toH = (t) => t.split(':').map(Number).reduce((h, m) => h + m / 60)
   const top = (t) => OV_PAD + (t - 8) * OV_HH
 
@@ -990,8 +1014,13 @@ function ScheduleOverlay({ onClose }) {
     })
   }
 
-  const [sessions, setSessions] = useState(() => normalize(DEFAULT_SESSIONS))
+  const nextId = useRef(0)
+  const withId = (list) => list.map((s) => (s.id != null ? s : { ...s, id: nextId.current++ }))
+
+  const [sessions, setSessions] = useState(() => normalize(withId(DEFAULT_SESSIONS)))
   const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState(null) // session/slot being changed or filled, or null when adding fresh
+  const [actionId, setActionId] = useState(null) // card whose Change/Delete menu is open
   const [form, setForm] = useState({
     typeValue: SCHEDULE_TYPES[0].value,
     location: SCHEDULE_TYPES[0].location,
@@ -1007,15 +1036,66 @@ function ScheduleOverlay({ onClose }) {
   const hours = Array.from({ length: maxHour - 8 + 1 }, (_, i) => 8 + i)
   const wheelHours = Array.from({ length: 17 }, (_, i) => 6 + i) // 06:00 – 22:00
 
+  const openAddForm = () => {
+    setEditingId(null)
+    setForm({ typeValue: SCHEDULE_TYPES[0].value, location: SCHEDULE_TYPES[0].location, hour: 8, minute: 0 })
+    setAdding(true)
+  }
+
+  const openEditForm = (s) => {
+    const opt = SCHEDULE_TYPES.find((t) => t.icon === s.type && t.label === s.title) || SCHEDULE_TYPES[0]
+    const [hh, mm] = s.start.split(':').map(Number)
+    setEditingId(s.id)
+    setForm({ typeValue: opt.value, location: s.location, hour: hh, minute: mm >= 30 ? 30 : 0 })
+    setAdding(true)
+    setActionId(null)
+  }
+
   const submitAdd = (e) => {
     e.preventDefault()
     const opt = SCHEDULE_TYPES.find((t) => t.value === form.typeValue)
     if (!opt) return
     const start = `${form.hour}:${String(form.minute).padStart(2, '0')}`
-    setSessions((prev) =>
-      normalize([...prev, { start, title: opt.label, type: opt.icon, location: form.location }])
-    )
+    setSessions((prev) => {
+      const next =
+        editingId != null
+          ? prev.map((s) =>
+              s.id === editingId
+                ? { id: s.id, start, title: opt.label, type: opt.icon, location: form.location }
+                : s
+            )
+          : [...prev, { id: nextId.current++, start, title: opt.label, type: opt.icon, location: form.location }]
+      return normalize(next)
+    })
     setAdding(false)
+    setEditingId(null)
+  }
+
+  const deleteSession = (id) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { id: s.id, start: s.start, height: s.height, empty: true } : s))
+    )
+    setActionId(null)
+  }
+
+  // removes an empty slot entirely and pulls everything after it up to close the gap
+  const collapseSlot = (id) => {
+    setSessions((prev) => {
+      const slot = prev.find((s) => s.id === id)
+      if (!slot) return prev
+      const gapHours = (slot.height + 5) / OV_HH
+      const slotStart = toH(slot.start)
+      const rest = prev
+        .filter((s) => s.id !== id)
+        .map((s) => {
+          if (toH(s.start) <= slotStart) return s
+          const t = toH(s.start) - gapHours
+          const hh = Math.floor(t)
+          const mm = +((t - hh) * 60).toFixed(2)
+          return { ...s, start: `${hh}:${mm}` }
+        })
+      return normalize(rest)
+    })
   }
 
   return (
@@ -1024,13 +1104,13 @@ function ScheduleOverlay({ onClose }) {
         <button className="ov-close" onClick={onClose}>×</button>
         <div className="ov-title">Daily Schedule</div>
         <div className="ov-goals">Goals&nbsp;&nbsp;0/3</div>
-        <button className="ov-add" onClick={() => setAdding(true)}>+</button>
+        <button className="ov-add" onClick={openAddForm}>+</button>
       </div>
 
       {adding && (
-        <div className="ov-add-backdrop" onClick={() => setAdding(false)}>
+        <div className="ov-add-backdrop" onClick={() => { setAdding(false); setEditingId(null) }}>
           <form className="ov-add-form" onClick={(e) => e.stopPropagation()} onSubmit={submitAdd}>
-            <div className="ov-add-title">New schedule item</div>
+            <div className="ov-add-title">{editingId != null ? 'Change schedule item' : 'New schedule item'}</div>
 
             <label className="ov-add-lbl">
               Type
@@ -1069,28 +1149,30 @@ function ScheduleOverlay({ onClose }) {
               </select>
             </label>
 
-            <label className="ov-add-lbl">
-              Time
-              <div className="wheel-row">
-                <WheelPicker
-                  options={wheelHours}
-                  value={form.hour}
-                  onChange={(h) => setForm((f) => ({ ...f, hour: h }))}
-                  format={(h) => String(h).padStart(2, '0')}
-                />
-                <div className="wheel-colon">:</div>
-                <WheelPicker
-                  options={[0, 30]}
-                  value={form.minute}
-                  onChange={(m) => setForm((f) => ({ ...f, minute: m }))}
-                  format={(m) => String(m).padStart(2, '0')}
-                />
-              </div>
-            </label>
+            {editingId == null && (
+              <label className="ov-add-lbl">
+                Time
+                <div className="wheel-row">
+                  <WheelPicker
+                    options={wheelHours}
+                    value={form.hour}
+                    onChange={(h) => setForm((f) => ({ ...f, hour: h }))}
+                    format={(h) => String(h).padStart(2, '0')}
+                  />
+                  <div className="wheel-colon">:</div>
+                  <WheelPicker
+                    options={[0, 30]}
+                    value={form.minute}
+                    onChange={(m) => setForm((f) => ({ ...f, minute: m }))}
+                    format={(m) => String(m).padStart(2, '0')}
+                  />
+                </div>
+              </label>
+            )}
 
             <div className="ov-add-actions">
-              <button type="button" className="ov-add-cancel" onClick={() => setAdding(false)}>Cancel</button>
-              <button type="submit" className="ov-add-submit">Add</button>
+              <button type="button" className="ov-add-cancel" onClick={() => { setAdding(false); setEditingId(null) }}>Cancel</button>
+              <button type="submit" className="ov-add-submit">{editingId != null ? 'Save' : 'Add'}</button>
             </div>
           </form>
         </div>
@@ -1099,19 +1181,42 @@ function ScheduleOverlay({ onClose }) {
       <div className="ov-scroll">
         <div className="ov-track" style={{ height: top(hours[hours.length - 1] + 1) }}>
           <div className="ov-rail" />
+          <div className="ov-now" style={{ top: top(NOW_TIME) - 5 }}>
+            <div className="ov-now__dot" />
+          </div>
           {hours.map((h) => (
             <div key={h} className="ov-time" style={{ top: top(h) - 7 }}>
               {String(h).padStart(2, '0')}:00
             </div>
           ))}
+          {hours.map((h) => (
+            <div key={'half' + h} className="ov-half-tick" style={{ top: top(h + 0.5) }} />
+          ))}
 
           {sessions.map((s, i) => {
+            if (s.empty) {
+              return (
+                <div key={s.id} className="ov-card ov-card--empty" style={{ top: top(starts[i]), height: s.height }}>
+                  <button
+                    type="button"
+                    className="ov-empty-add"
+                    onClick={() => openEditForm({ ...s, type: SCHEDULE_TYPES[0].icon, title: SCHEDULE_TYPES[0].label, location: SCHEDULE_TYPES[0].location })}
+                  >
+                    + Add here
+                  </button>
+                  <button type="button" className="ov-empty-collapse" onClick={() => collapseSlot(s.id)}>
+                    Remove space ↑
+                  </button>
+                </div>
+              )
+            }
             const [src, size] = ICONS[s.type]
             return (
               <div
-                key={i}
+                key={s.id}
                 className={'ov-card' + (s.light ? ' ov-card--light' : '')}
                 style={{ top: top(starts[i]), height: s.height }}
+                onClick={() => setActionId(s.id)}
               >
                 <div className="ov-card__row">
                   <img
@@ -1138,6 +1243,30 @@ function ScheduleOverlay({ onClose }) {
           })}
         </div>
       </div>
+
+      {actionId != null && (
+        <div className="ov-add-backdrop" onClick={() => setActionId(null)}>
+          <div className="ov-action-menu" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="ov-action-btn"
+              onClick={() => openEditForm(sessions.find((s) => s.id === actionId))}
+            >
+              Change
+            </button>
+            <button
+              type="button"
+              className="ov-action-btn ov-action-btn--danger"
+              onClick={() => deleteSession(actionId)}
+            >
+              Delete
+            </button>
+            <button type="button" className="ov-action-btn ov-action-btn--cancel" onClick={() => setActionId(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1240,9 +1369,7 @@ export default function App() {
               <div
                 className="ov-backdrop"
                 style={{
-                  opacity: 0.5 * frac,
                   pointerEvents: frac > 0.02 ? 'auto' : 'none',
-                  transition: ovX != null ? 'none' : 'opacity .3s ease',
                 }}
                 onClick={() => setOvOpen(false)}
               />
