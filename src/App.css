@@ -634,11 +634,6 @@
 /* actual proportional readiness arc — replaces the old flat-filled disk so the
    ring reads as a real gauge (how much of the circle is filled = the score)
    instead of a solid dot that never visually changes with the number */
-@property --pct {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 83;
-}
 .drv2-ring-progress {
   position: absolute;
   left: 11.8px;
@@ -649,7 +644,6 @@
   background: conic-gradient(#9747ff calc(var(--pct) * 1%), rgba(255, 255, 255, 0.1) 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
-  transition: --pct 0.9s ease;
 }
 .drv2-stable {
   position: absolute;
@@ -664,15 +658,14 @@
 .drv2-pct {
   position: absolute;
   left: 30.34px;
-  top: 55px;
+  top: 52.26px;
   width: 57px;
-  font-size: 18px;
+  font-size: 26px;
   font-weight: 500;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   color: #fff;
   text-align: center;
   white-space: nowrap;
-  transition: all 0.5s ease;
 }
 /* per-metric readouts — the raw bracelet data that adds up to the score above,
    in a plain 2x2 grid so it reads as one calm summary, not a diagram */

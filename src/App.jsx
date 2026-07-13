@@ -841,15 +841,6 @@ function DashboardScreen({ onNav }) {
     const id = setInterval(() => setRemain((r) => Math.max(0, r - 1)), 1000)
     return () => clearInterval(id)
   }, [])
-  // readiness score drifts by a point or two every couple seconds — reads as a
-  // live bracelet feed rather than a number frozen on the screen
-  const [readyPct, setReadyPct] = useState(83)
-  useEffect(() => {
-    const id = setInterval(() => {
-      setReadyPct((p) => Math.max(78, Math.min(90, p + (Math.random() < 0.5 ? -1 : 1))))
-    }, 2200)
-    return () => clearInterval(id)
-  }, [])
   const p2 = (n) => String(n).padStart(2, '0')
   const d = Math.floor(remain / 86400)
   const h = Math.floor((remain % 86400) / 3600)
@@ -888,9 +879,9 @@ function DashboardScreen({ onNav }) {
           <div className="drv2-gauge">
             <div className="drv2-ring">
               <img className="drv2-ring-outer" src={`${A}/drv-ellipse-outer.svg`} alt="" />
-              <div className="drv2-ring-progress" style={{ '--pct': readyPct }} />
+              <div className="drv2-ring-progress" style={{ '--pct': 83 }} />
               <div className="drv2-stable">Stable</div>
-              <div className="drv2-pct">{readyPct} %</div>
+              <div className="drv2-pct">83 %</div>
             </div>
             <div className="drv2-stats-grid">
               <div className="drv2-stat">
