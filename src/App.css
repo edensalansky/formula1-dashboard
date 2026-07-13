@@ -5,16 +5,17 @@
 .stage {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1a1919;
+  background: #1f1e1e url('/assets/bg.svg') center / cover no-repeat;
   overflow: hidden;
 }
 
 .screen {
   position: relative;
-  width: 1194px;
+  width: 1300px;
   height: 834px;
   flex: 0 0 auto;
   transform: scale(var(--scale, 1));
@@ -28,7 +29,7 @@
 .logo {
   position: absolute;
   z-index: 2;
-  left: 26px;
+  left: 10px;
   top: 60px; /* vertically centered on the nav bar / avatar row */
   height: 26px;
   width: auto;
@@ -48,7 +49,7 @@
 .nav {
   position: absolute;
   z-index: 2;
-  left: 478px;
+  left: 530px;
   top: 32px;
   width: 240px;
   height: 56px;
@@ -102,7 +103,7 @@
 .sh-avatar {
   position: absolute;
   z-index: 2;
-  right: 22px;
+  right: 10px;
   top: 34px;
   width: 40px;
   height: 40px;
@@ -115,6 +116,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .sim-title {
@@ -134,13 +136,14 @@
   position: absolute;
   left: 12px;
   top: 221px;
-  width: 1170px;
+  width: 1276px;
   height: 462px;
-  border-radius: 24px;
-  background: rgba(38, 37, 37, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12.78px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
 .sim-timer {
@@ -166,7 +169,7 @@
   position: absolute;
   left: 88px; /* aligned with the MIN track so HR keeps pace with the playhead */
   top: 62px;
-  width: 1036px;
+  width: 1142px;
   aspect-ratio: 2160 / 220; /* matches the canvas's internal pixel grid so dots render as perfect circles */
 }
 
@@ -175,7 +178,7 @@
   position: absolute;
   left: 24px;
   top: 200px;
-  width: 1122px;
+  width: 1228px;
   height: 132px;
   border-radius: 16px;
   background: #000;
@@ -292,7 +295,7 @@
 .future-veil {
   position: absolute;
   top: 0;
-  bottom: 0;
+  height: 100%;
   right: 0;
   background: rgba(220, 220, 220, 0.22);
   pointer-events: none;
@@ -477,9 +480,12 @@
   bottom: 40px;
   width: 135px;
   height: 54px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 27px;
-  background: rgba(183, 183, 183, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   color: #fff;
   font-family: inherit;
   font-size: 20px;
@@ -489,7 +495,7 @@
   transition: background 0.12s ease, transform 0.08s ease;
 }
 .sim-btn:hover {
-  background: rgba(183, 183, 183, 0.32);
+  background: rgba(255, 255, 255, 0.16);
   transform: scale(1.03);
 }
 .sim-start {
@@ -504,7 +510,7 @@
  * ============================================================= */
 .dash-hi {
   position: absolute;
-  left: 40px;
+  left: 24px;
   top: 88px;
   font-size: 35px;
   font-weight: 700;
@@ -513,7 +519,7 @@
 }
 .dash-sub {
   position: absolute;
-  left: 40px;
+  left: 24px;
   top: 132px;
   font-size: 16px;
   font-weight: 400;
@@ -539,7 +545,7 @@
 .drv-section-title {
   position: absolute;
   z-index: 2;
-  left: 40px;
+  left: 24px;
   top: 170px;
   font-size: 20px;
   font-weight: 500;
@@ -549,7 +555,7 @@
 .drv2-card {
   position: absolute;
   z-index: 2;
-  left: 40px;
+  left: 24px;
   top: 208px;
   width: 287px;
   height: 350px;
@@ -658,11 +664,11 @@
 .drv2-pct {
   position: absolute;
   left: 30.34px;
-  top: 52.26px;
+  top: 56px;
   width: 57px;
-  font-size: 26px;
+  font-size: 15px;
   font-weight: 500;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
   color: #fff;
   text-align: center;
   white-space: nowrap;
@@ -704,7 +710,7 @@
 .next-race-title {
   position: absolute;
   z-index: 2;
-  left: 40px;
+  left: 24px;
   top: 574px;
   font-size: 20px;
   font-weight: 500;
@@ -716,7 +722,7 @@
 .race-card {
   position: absolute;
   z-index: 2;
-  left: 40px;
+  left: 24px;
   top: 612px;
   width: 287px;
   height: 186px;
@@ -801,7 +807,7 @@
    the track markers; slides in/out smoothly on select/deselect */
 .focus-panel {
   position: absolute;
-  left: 40px;
+  left: 24px;
   top: 208px;
   width: 320px;
   z-index: 6;
@@ -975,7 +981,7 @@
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
+  border-radius: 20px 0 0 20px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   will-change: transform;
@@ -986,12 +992,112 @@
   height: 100%;
 }
 
+/* ============================================================= *
+ *  Gmail-style account popup (opened from the SH avatar) — a
+ *  compact dropdown anchored under the avatar, not a full panel
+ * ============================================================= */
+.coach-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  background: transparent;
+  transition: opacity 0.3s ease;
+}
+.coach-panel {
+  position: absolute;
+  top: 84px;
+  right: 0px;
+  width: 260px;
+  z-index: 50;
+  background: rgba(40, 40, 40, 0.92);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transform-origin: top right;
+  transform: scale(0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.coach-panel--open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.coach-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #9747ff;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.coach-name {
+  margin-top: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+.coach-email {
+  margin-top: 2px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.coach-role {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #c6ff00;
+}
+.coach-divider {
+  width: 100%;
+  height: 1px;
+  margin-top: 18px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.coach-sec-title {
+  margin-top: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.coach-focus-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.coach-focus-tag {
+  background: rgba(151, 71, 255, 0.18);
+  border: 1px solid rgba(151, 71, 255, 0.55);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
 /* header */
 .ov-head {
   position: relative;
   flex: 0 0 auto;
   height: 72px;
-  padding: 20px 20px 0 56px;
+  padding: 20px 20px 0 16px;
   text-align: left;
 }
 .ov-close {
@@ -1006,11 +1112,15 @@
   cursor: pointer;
 }
 .ov-title {
+  position: relative;
+  top: 26px;
   font-size: 20px;
   font-weight: 500;
   color: #fff;
 }
 .ov-goals {
+  position: relative;
+  top: 26px;
   margin-top: 4px;
   font-size: 16px;
   font-weight: 400;
@@ -1170,6 +1280,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  top: 40px;
   touch-action: pan-y;
 }
 .ov-scroll::-webkit-scrollbar {
@@ -1198,6 +1309,7 @@
   background: #9747ff;
   z-index: 1;
   pointer-events: none;
+  transition: top 1s linear;
 }
 .ov-now__dot {
   position: absolute;
@@ -1212,7 +1324,9 @@
 }
 .ov-time {
   position: absolute;
-  left: 16px;
+  left: 0;
+  width: 67px;
+  text-align: center;
   font-size: 16px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.65);
@@ -1404,13 +1518,14 @@
   position: absolute;
   left: 12px;
   top: 246px;
-  width: 1170px;
+  width: 1276px;
   height: 570px;
-  border-radius: 24px;
-  background: rgba(38, 37, 37, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12.78px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 .sum-restart {
   top: 18px;
@@ -1470,7 +1585,7 @@
   position: absolute;
   left: 88px; /* same left as .sim-hr */
   top: 118px;
-  width: 1036px; /* same width as .sim-hr */
+  width: 1142px; /* same width as .sim-hr */
   aspect-ratio: 2160 / 220; /* matches the canvas's internal pixel grid so dots render as perfect circles */
 }
 
@@ -1481,7 +1596,7 @@
   position: absolute;
   left: 24px;
   top: 232px;
-  width: 1122px;
+  width: 1228px;
   height: 132px;
   border-radius: 16px;
   background: #000;
@@ -1510,18 +1625,6 @@
   min-width: 100%;
 }
 
-/* a small marker on any timeline pill that carries a suggested goal */
-.notif--hasgoal::after {
-  content: '';
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ff9500;
-  border: 1.5px solid #000;
-}
 .notif--sel {
   box-shadow: 0 0 0 2px #fff;
 }
@@ -1637,6 +1740,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.sumbot-jump button span {
+  transform: translate(0px, -1px);
 }
 .sumbot-jump button:hover {
   background: rgba(255, 255, 255, 0.2);

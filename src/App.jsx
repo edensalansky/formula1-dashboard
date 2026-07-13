@@ -132,14 +132,17 @@ const HR_ROWS = 11
 
 // system-generated events (green) — driver physical/mental, with durations (min).
 // some carry a coaching "goal" suggestion — those get a mark on the review timeline.
+// each event's info line is written against the same BPM / Focus / Stress
+// metrics shown on the Driver Status card, so the live timeline reads as
+// the source of that data instead of an unrelated feed
 const SYS_EVENTS = [
-  { start: 2, dur: 3, label: 'Warm-up', info: 'Activation & mobility · baseline HR 72 bpm' },
-  { start: 6, dur: 4, label: 'Heart-rate ramp-up', info: 'Aerobic ramp · HR 110 → 155 bpm' },
+  { start: 2, dur: 3, label: 'Warm-up', info: 'BPM baseline check before load ramps up · 72 bpm' },
+  { start: 6, dur: 4, label: 'Heart-rate ramp-up', info: 'BPM climbing into the training zone · 110 → 155 bpm' },
   {
     start: 12,
     dur: 2,
     label: 'High cognitive load',
-    info: 'Decision speed under stress · load 84%',
+    info: 'Focus under load · decision speed at 84%',
     goal: {
       title: 'Improve decision speed under stress',
       tagType: 'simulator',
@@ -151,7 +154,7 @@ const SYS_EVENTS = [
     start: 16,
     dur: 5,
     label: 'Braking-zone focus',
-    info: 'Visual focus across 6 heavy braking zones',
+    info: 'Focus tested across 6 heavy braking zones',
     goal: {
       title: 'Improve braking consistency',
       tagType: 'simulator',
@@ -163,7 +166,7 @@ const SYS_EVENTS = [
     start: 24,
     dur: 3,
     label: 'G-force neck load',
-    info: 'Sustained lateral load · peak 4.2 G',
+    info: 'Stress on the neck under sustained lateral G · peak 4.2 G',
     goal: {
       title: 'Increase neck strength under sustained-G',
       tagType: 'training',
@@ -171,12 +174,12 @@ const SYS_EVENTS = [
       desc: 'Neck load peaked at 4.2G for an extended period.',
     },
   },
-  { start: 30, dur: 4, label: 'Concentration peak', info: 'Sustained attention · 96% accuracy' },
+  { start: 30, dur: 4, label: 'Concentration peak', info: 'Focus holding steady · 96% accuracy' },
   {
     start: 38,
     dur: 2,
     label: 'Reaction drill',
-    info: 'Light-panel drill · avg reaction 210 ms',
+    info: 'Focus + reaction speed drill · avg 210 ms',
     goal: {
       title: 'Sharpen reaction time',
       tagType: 'simulator',
@@ -188,7 +191,7 @@ const SYS_EVENTS = [
     start: 44,
     dur: 5,
     label: 'Sustained focus',
-    info: 'Long-run focus · HR held at 162 bpm',
+    info: 'Focus under fatigue · BPM held at 162',
     goal: {
       title: 'Build sustained-attention endurance',
       tagType: 'training',
@@ -196,8 +199,8 @@ const SYS_EVENTS = [
       desc: 'Focus began drifting during the long run.',
     },
   },
-  { start: 52, dur: 3, label: 'Recovery window', info: 'Active recovery · HR 155 → 120 bpm' },
-  { start: 57, dur: 2, label: 'Cool-down', info: 'Parasympathetic recovery · HR 95 bpm' },
+  { start: 52, dur: 3, label: 'Recovery window', info: 'BPM easing back down · 155 → 120 bpm' },
+  { start: 57, dur: 2, label: 'Cool-down', info: 'BPM and stress settling back to baseline · 95 bpm' },
 ]
 
 const HR_HIGH = 7 // column height at/above this = a heart-rate spike — flag it red
@@ -231,7 +234,7 @@ function fmtHMS(min) {
   return fmtClock(Math.round(min * 60))
 }
 
-function TrainingScreen({ onNav }) {
+function TrainingScreen({ onNav, onOpenCoach }) {
   const [running, setRunning] = useState(false)
   const [elapsed, setElapsed] = useState(0) // seconds
   const [notes, setNotes] = useState([]) // {start, end, text}
@@ -277,7 +280,7 @@ function TrainingScreen({ onNav }) {
       label: n.text,
       min: n.start,
       dur: +(n.end - n.start).toFixed(1),
-      info: 'Driver note',
+      info: 'Coach note',
     })),
   ].sort((a, b) => a.min - b.min)
   const goalEvents = allEvents.filter((e) => e.goal)
@@ -308,7 +311,7 @@ function TrainingScreen({ onNav }) {
       for (let row = 0; row < HR_ROWS; row++) {
         ctx.beginPath()
         ctx.arc(c * cw + cw / 2, (HR_ROWS - 1 - row) * chh + chh / 2, r, 0, Math.PI * 2)
-        ctx.fillStyle = row >= litThisCol ? '#2e2e2e' : isHigh ? '#ff3b30' : '#e6e6e6'
+        ctx.fillStyle = row >= litThisCol ? '#1c1c1c' : isHigh ? '#ff3b30' : '#e6e6e6'
         ctx.fill()
       }
       left -= litThisCol
@@ -461,7 +464,7 @@ function TrainingScreen({ onNav }) {
         <img className="logo" src={`${A}/c1logo.svg`} alt="C1" />
         <div className="brand">TRAINING REVIEW</div>
         <Nav active="training" onNav={onNav} />
-        <div className="sh-avatar">SH</div>
+        <div className="sh-avatar" onClick={onOpenCoach}>SH</div>
 
         <h1 className="sim-title">Training Review</h1>
 
@@ -471,7 +474,7 @@ function TrainingScreen({ onNav }) {
           <div className="sum-stats">
             <div className="sum-tile"><b>{fmtClock(elapsed).slice(3)}</b><span>Duration</span></div>
             <div className="sum-tile"><b>{SYS_EVENTS.length}</b><span>System alerts</span></div>
-            <div className="sum-tile"><b>{notes.length}</b><span>Driver notes</span></div>
+            <div className="sum-tile"><b>{notes.length}</b><span>Coach notes</span></div>
             <div className="sum-tile"><b>{avgHR}<i>bpm</i></b><span>Avg heart-rate</span></div>
           </div>
 
@@ -527,7 +530,7 @@ function TrainingScreen({ onNav }) {
               {selNotif ? (
                 <>
                   <span className={'sumbot-detail__badge sumbot-detail__badge--' + selNotif.type}>
-                    {selNotif.type === 'user' ? 'DRIVER NOTE' : 'SYSTEM'}
+                    {selNotif.type === 'user' ? 'COACH NOTE' : 'SYSTEM'}
                   </span>
                   <div className="sumbot-detail__title">{selNotif.label}</div>
                   <div className="sumbot-detail__meta">
@@ -546,11 +549,11 @@ function TrainingScreen({ onNav }) {
                 <span>Suggested Goals</span>
                 {goalEvents.length > 0 && (
                   <div className="sumbot-jump">
-                    <button onClick={() => jumpGoal(-1)} aria-label="Previous goal">‹</button>
+                    <button onClick={() => jumpGoal(-1)} aria-label="Previous goal"><span>‹</span></button>
                     <span>
                       {selNotif?.goal ? goalEvents.findIndex((e) => e.id === selNotif.id) + 1 : '–'}/{goalEvents.length}
                     </span>
-                    <button onClick={() => jumpGoal(1)} aria-label="Next goal">›</button>
+                    <button onClick={() => jumpGoal(1)} aria-label="Next goal"><span>›</span></button>
                   </div>
                 )}
               </div>
@@ -586,7 +589,7 @@ function TrainingScreen({ onNav }) {
       <img className="logo" src={`${A}/c1logo.svg`} alt="C1" />
       <div className="brand">LIVE TRAINING</div>
       <Nav active="training" onNav={onNav} />
-      <div className="sh-avatar">SH</div>
+      <div className="sh-avatar" onClick={onOpenCoach}>SH</div>
 
       <h1 className="sim-title">Simulator Mode</h1>
 
@@ -672,7 +675,7 @@ function TrainingScreen({ onNav }) {
                         label: n.text,
                         min: n.start,
                         dur: +(n.end - n.start).toFixed(1),
-                        info: 'Driver note',
+                        info: 'Coach note',
                       })
                     }}
                   >
@@ -741,7 +744,7 @@ function TrainingScreen({ onNav }) {
                 <div className="notif-detail" style={{ left, width: cardW }} onClick={(e) => e.stopPropagation()}>
                   <div className="notif-detail__head">
                     <span className={'notif-detail__badge notif-detail__badge--' + detail.type}>
-                      {detail.type === 'user' ? 'DRIVER NOTE' : 'SYSTEM'}
+                      {detail.type === 'user' ? 'COACH NOTE' : 'SYSTEM'}
                     </span>
                     <button className="notif-detail__close" onClick={() => setDetail(null)}>
                       ×
@@ -834,7 +837,7 @@ const FOCUS_POINTS = [
   },
 ]
 
-function DashboardScreen({ onNav }) {
+function DashboardScreen({ onNav, onOpenCoach }) {
   const [sel, setSel] = useState(null) // selected focus point (1..6)
   const [remain, setRemain] = useState(11 * 86400 + 2 * 3600 + 32 * 60 + 24) // Belgium GP countdown (sec)
   useEffect(() => {
@@ -854,7 +857,7 @@ function DashboardScreen({ onNav }) {
 
       <img className="logo" src={`${A}/c1logo.svg`} alt="C1" />
       <Nav active="dashboard" onNav={onNav} />
-      <div className="sh-avatar">SH</div>
+      <div className="sh-avatar" onClick={onOpenCoach}>SH</div>
 
       {/* everything except the logo/nav/avatar slides fully off-frame to the left when a
           track point is selected, so only the track and its close-up data show */}
@@ -981,7 +984,13 @@ const DEFAULT_SESSIONS = [
 function ScheduleOverlay({ onClose }) {
   const OV_HH = 114
   const OV_PAD = 14
-  const NOW_TIME = 9 + 40 / 60 // system time — 9:40
+  // starts at the system time (9:40) and creeps forward in real time, so the
+  // line visibly moves rather than sitting frozen on one spot
+  const [nowTime, setNowTime] = useState(9 + 40 / 60)
+  useEffect(() => {
+    const id = setInterval(() => setNowTime((t) => t + 1 / 3600), 1000)
+    return () => clearInterval(id)
+  }, [])
   const toH = (t) => t.split(':').map(Number).reduce((h, m) => h + m / 60)
   const top = (t) => OV_PAD + (t - 8) * OV_HH
 
@@ -1172,7 +1181,7 @@ function ScheduleOverlay({ onClose }) {
       <div className="ov-scroll">
         <div className="ov-track" style={{ height: top(hours[hours.length - 1] + 1) }}>
           <div className="ov-rail" />
-          <div className="ov-now" style={{ top: top(NOW_TIME) - 5 }}>
+          <div className="ov-now" style={{ top: top(nowTime) - 7 }}>
             <div className="ov-now__dot" />
           </div>
           {hours.map((h) => (
@@ -1274,6 +1283,7 @@ export default function App() {
 
   // right-edge slide-in schedule overlay (works on every screen)
   const [ovOpen, setOvOpen] = useState(false)
+  const [coachOpen, setCoachOpen] = useState(false)
   const [ovX, setOvX] = useState(null) // live drag translateX (screen px), null when idle
   const ovXRef = useRef(null)
   const ovOpenRef = useRef(false)
@@ -1326,7 +1336,10 @@ export default function App() {
   // scale the fixed 1194x834 canvas to fit the iPad viewport
   useEffect(() => {
     const fit = () => {
-      const s = Math.min(window.innerWidth / 1194, window.innerHeight / 834)
+      const vv = window.visualViewport
+      const w = vv ? vv.width : window.innerWidth
+      const h = vv ? vv.height : window.innerHeight
+      const s = Math.min(w / 1300, h / 834)
       document.documentElement.style.setProperty('--scale', s)
     }
     fit()
@@ -1345,9 +1358,9 @@ export default function App() {
       <div className="stage">
       <div className="screen">
         {screen === 'training' ? (
-          <TrainingScreen onNav={setScreen} />
+          <TrainingScreen onNav={setScreen} onOpenCoach={() => setCoachOpen(true)} />
         ) : (
-          <DashboardScreen onNav={setScreen} />
+          <DashboardScreen onNav={setScreen} onOpenCoach={() => setCoachOpen(true)} />
         )}
 
         {/* right-edge slide-in schedule overlay (available on every screen) */}
@@ -1377,6 +1390,27 @@ export default function App() {
             </>
           )
         })()}
+
+        {/* Gmail-style account popup — compact dropdown anchored under the avatar */}
+        <div
+          className="coach-backdrop"
+          style={{ pointerEvents: coachOpen ? 'auto' : 'none', opacity: coachOpen ? 1 : 0 }}
+          onClick={() => setCoachOpen(false)}
+        />
+        <div className={'coach-panel' + (coachOpen ? ' coach-panel--open' : '')}>
+          <div className="coach-avatar">SC</div>
+          <div className="coach-name">Steve Carter</div>
+          <div className="coach-email">s.carter@scuderiaferrari.com</div>
+          <div className="coach-role">Head Performance Coach · Scuderia Ferrari</div>
+
+          <div className="coach-divider" />
+
+          <div className="coach-sec-title">Today's focus</div>
+          <div className="coach-focus-row">
+            <span className="coach-focus-tag">Increase neck stability</span>
+            <span className="coach-focus-tag">Focus under pressure</span>
+          </div>
+        </div>
       </div>
       </div>
     </>
