@@ -29,7 +29,7 @@
 .logo {
   position: absolute;
   z-index: 2;
-  left: 10px;
+  left: 20px;
   top: 60px; /* vertically centered on the nav bar / avatar row */
   height: 26px;
   width: auto;
@@ -137,7 +137,7 @@
   left: 12px;
   top: 221px;
   width: 1276px;
-  height: 462px;
+  height: 492px;
   border-radius: 12.78px;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(4px);
@@ -225,6 +225,11 @@
 .tick--top {
   top: 0;
 }
+/* Training Review only — the live Simulator screen shares .tick--top and
+   should stay untouched */
+.sumtl-track .tick--top {
+  top: -15px;
+}
 .tick--bot {
   bottom: 0;
 }
@@ -267,13 +272,13 @@
 /* named notification pills (zoomed-in view) */
 .notif {
   position: absolute;
-  height: 20px;
-  border-radius: 9px;
+  height: 32px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 0 10px;
-  font-size: 11px;
+  padding: 0 14px;
+  font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -283,12 +288,12 @@
   filter: brightness(1.08);
 }
 .notif--sys {
-  top: calc(50% - 10px); /* single row, centered on the axis — matches Figma */
+  top: calc(50% - 16px); /* single row, centered on the axis — matches Figma */
   background: #c6ff00;
   color: #000;
 }
 .notif--user {
-  top: calc(50% - 10px); /* same row as sys pills — matches Figma */
+  top: calc(50% - 16px); /* same row as sys pills — matches Figma */
   background: #9747ff;
   color: #fff;
 }
@@ -304,8 +309,8 @@
 /* fine per-second grid — one line per second (0..90 min = 5400 lines) */
 .sec-grid {
   position: absolute;
-  top: 20px;
-  bottom: 20px;
+  top: 6px;
+  bottom: 6px;
   left: 0;
   right: 0;
   background-image: linear-gradient(
@@ -633,45 +638,58 @@
 }
 .drv2-ring-outer {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: 12px;
+  width: auto;
+  height: auto;
 }
 /* actual proportional readiness arc — replaces the old flat-filled disk so the
    ring reads as a real gauge (how much of the circle is filled = the score)
    instead of a solid dot that never visually changes with the number */
 .drv2-ring-progress {
   position: absolute;
-  left: 11.8px;
-  top: 11.8px;
-  width: 94.4px;
-  height: 94.4px;
+  left: 2px;
+  top: 2px;
+  width: 114px;
+  height: 114px;
   border-radius: 50%;
   background: conic-gradient(#9747ff calc(var(--pct) * 1%), rgba(255, 255, 255, 0.1) 0);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 10px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 10px));
+}
+/* while the bracelet hasn't reported yet, spin a short arc instead of sitting
+   at a flat, meaningless 0% */
+.drv2-ring-progress--collecting {
+  background: conic-gradient(#9747ff 0 15%, rgba(255, 255, 255, 0.1) 15% 100%);
+  animation: drv2-collecting-spin 1s linear infinite;
+}
+@keyframes drv2-collecting-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .drv2-stable {
   position: absolute;
-  left: 32.87px;
+  left: 17px;
   top: 30.34px;
-  width: 52.6px;
-  font-size: 17px;
+  width: 84px;
+  font-size: 13px;
   font-weight: 500;
   color: #fff;
   text-align: center;
+  white-space: nowrap;
 }
 .drv2-pct {
   position: absolute;
   left: 30.34px;
-  top: 56px;
+  top: 54px;
   width: 57px;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 22px;
+  font-weight: 600;
   letter-spacing: -0.2px;
   color: #fff;
   text-align: center;
   white-space: nowrap;
+  transition: all 0.5s ease;
 }
 /* per-metric readouts — the raw bracelet data that adds up to the score above,
    in a plain 2x2 grid so it reads as one calm summary, not a diagram */
@@ -793,10 +811,15 @@
 .track-3d {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible; /* only .screen (the actual dashboard viewport) clips at real screen edges */
   z-index: 0;
 }
 .track-3d canvas {
-  display: block;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
   cursor: grab;
 }
 .track-3d canvas:active {
@@ -883,52 +906,34 @@
   color: #d6d6d6;
 }
 
-/* Mental Focus Points — pin markers stuck on the track (3D anchored):
-   a dot sits exactly on the circuit line, a thin stem rises from it, a
-   numbered tag floats above — the drei <Html> position IS the dot's anchor. */
+/* Mental Focus Points — numbered badges hovering directly over their track
+   section (3D anchored via the drei <Html> position), Apple/Google Maps-style
+   annotations: no connector line, no anchor dot, just a small fixed lift so
+   the badge sits just above the point instead of covering it. */
 .focus-pt-wrap {
   position: relative;
   width: 0;
   height: 0;
 }
-.focus-pt__dot {
-  position: absolute;
-  z-index: 10;
-  left: 0;
-  top: 0;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(151, 71, 255, 0.9), 0 0 14px rgba(151, 71, 255, 0.9);
-  pointer-events: none;
-}
 .focus-pt {
   position: absolute;
   left: 0;
-  bottom: 3px;
+  bottom: -10px;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   background: none;
   border: none;
-  padding: 6px 4px 0;
+  padding: 0;
   margin: 0;
   cursor: pointer;
   user-select: none;
-}
-.focus-pt__stem {
-  width: 2px;
-  height: 24px;
-  background: linear-gradient(to top, rgba(151, 71, 255, 0.95), rgba(151, 71, 255, 0.1));
 }
 .focus-pt__label {
   min-width: 22px;
   height: 22px;
   padding: 0 5px;
-  margin-bottom: 2px;
   border-radius: 7px;
   background: #9747ff;
   color: #fff;
@@ -970,13 +975,23 @@
   z-index: 45;
   background: transparent;
 }
-.ov-panel {
+/* wraps the panel + its hint tab together so both move as one unit under
+   the same slide transform — the hint stays glued to the panel's edge
+   through the whole drag, instead of sitting pinned to the static screen
+   edge while the panel slides underneath it */
+.ov-panel-wrap {
   position: absolute;
   top: 2.5px;
   right: 0;
   width: 326px;
   height: 829px;
   z-index: 50;
+  will-change: transform;
+}
+.ov-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -984,7 +999,32 @@
   border-radius: 20px 0 0 20px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  will-change: transform;
+}
+/* small persistent affordance so it's clear this edge slides a panel out —
+   attached to the panel's own left edge (a sibling inside the same wrap),
+   so it rides along with the panel through the whole open/close slide */
+.ov-edge__hint {
+  position: absolute;
+  top: 50%;
+  left: -26px;
+  transform: translateY(calc(-50% - 1px));
+  width: 32px;
+  height: 44px;
+  border-radius: 10px 0 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(23, 22, 26, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: ew-resize;
+  touch-action: none;
 }
 .ov-inner-wrap {
   display: flex;
@@ -1128,8 +1168,8 @@
 }
 .ov-add {
   position: absolute;
-  right: 21px;
-  top: 20px;
+  right: 16px;
+  top: 78px;
   width: 58px;
   height: 32px;
   border-radius: 1040px;
@@ -1181,12 +1221,13 @@
 }
 .ov-add-input {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 400;
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
-  padding: 7px 9px;
+  padding: 14px 9px;
 }
 .ov-add-input:focus {
   outline: none;
@@ -1353,6 +1394,15 @@
   padding: 10px 13px;
   overflow: hidden;
   cursor: pointer;
+  touch-action: pan-y;
+}
+.ov-card--dragging {
+  z-index: 5;
+  touch-action: none;
+  cursor: grabbing;
+  transform: scale(1.02);
+  border-color: #9747ff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(151, 71, 255, 0.6);
 }
 .ov-card--empty {
   cursor: default;
@@ -1442,8 +1492,8 @@
 }
 .ov-card__sub {
   margin-top: 3px;
-  font-size: 12px;
-  font-weight: 300;
+  font-size: 14px;
+  font-weight: 600;
   color: #c7c7c7;
 }
 .ov-goal {
@@ -1467,15 +1517,15 @@
 }
 .ov-goal__score {
   margin-top: 4px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.5px;
   color: #000;
 }
 .ov-goal__score span {
   margin-left: 5px;
-  font-size: 6px;
-  font-weight: 400;
+  font-size: 10px;
+  font-weight: 700;
 }
 .ov-goal--dark {
   background: #000;
@@ -1517,9 +1567,9 @@
 .sum-panel {
   position: absolute;
   left: 12px;
-  top: 246px;
+  top: 216px;
   width: 1276px;
-  height: 570px;
+  height: 600px;
   border-radius: 12.78px;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(4px);
@@ -1527,8 +1577,39 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
+/* brief "analyzing" beat shown in place of the review panel right after
+   FINISH, before the real numbers are ready to reveal */
+.sum-panel--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sum-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+.sum-loading__ring {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 6px solid rgba(151, 71, 255, 0.2);
+  border-top-color: #9747ff;
+  animation: sum-loading-spin 0.9s linear infinite;
+}
+.sum-loading__text {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.2px;
+}
+@keyframes sum-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .sum-restart {
-  top: 18px;
+  top: 43px;
   right: 20px;
   bottom: auto;
   width: 220px; /* wider so "NEXT TRAINING" fits on one line */
@@ -1595,7 +1676,7 @@
 .sumtl-panel {
   position: absolute;
   left: 24px;
-  top: 232px;
+  top: 237px;
   width: 1228px;
   height: 132px;
   border-radius: 16px;
@@ -1603,12 +1684,14 @@
   overflow: hidden;
 }
 .sumtl-viewport {
-  /* identical framing to .sim-viewport (live training) — same box, same padding */
+  /* identical framing to .sim-viewport (live training), but with extra headroom
+     at the top so the tick numbers (shifted up via .tick--top) aren't clipped
+     by overflow-y:hidden */
   position: absolute;
   left: 64px;
   right: 22px;
-  top: 22px;
-  height: 88px;
+  top: 7px;
+  height: 103px;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -1621,7 +1704,8 @@
 }
 .sumtl-track {
   position: relative;
-  height: 100%;
+  margin-top: 15px; /* headroom for .tick--top's negative offset, so it isn't clipped by .sumtl-viewport's overflow-y:hidden */
+  height: calc(100% - 15px);
   min-width: 100%;
 }
 
@@ -1646,16 +1730,6 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 14px 22px;
-}
-.sumbot::before {
-  content: '';
-  position: absolute;
-  top: -9px;
-  left: 60px;
-  width: 14px;
-  height: 14px;
-  background: rgba(51, 49, 49, 0.92);
-  clip-path: polygon(0 100%, 50% 0, 100% 100%);
 }
 .sumbot-detail {
   flex: 0 0 340px;

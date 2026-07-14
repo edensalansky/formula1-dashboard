@@ -244,6 +244,7 @@ function TrainingScreen({ onNav, onOpenCoach }) {
   const [detail, setDetail] = useState(null) // clicked notification: {type,label,min,dur,info}
   const [scrollX, setScrollX] = useState(0) // timeline horizontal scroll offset
   const [finished, setFinished] = useState(false) // show the session review
+  const [finishing, setFinishing] = useState(false) // brief "analyzing" loading state after FINISH, before the review
   const [selNotif, setSelNotif] = useState(null) // review: selected timeline notification
   const [addedGoals, setAddedGoals] = useState({}) // review: goal ids marked "Added"
   const canvasRef = useRef(null)
@@ -347,7 +348,11 @@ function TrainingScreen({ onNav, onOpenCoach }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running])
 
-  // pinch-to-zoom (iPad Safari gesture events) + ctrl-wheel (trackpad pinch)
+  // pinch-to-zoom (iPad Safari gesture events) + ctrl-wheel (trackpad pinch) —
+  // re-attached whenever `finished` flips, since that conditionally unmounts
+  // the live view's .sim-viewport (swapping in the review screen) and mounts
+  // a brand-new node when "NEXT TRAINING" returns to a fresh live session;
+  // an empty dep array here would leave the new node with no listeners at all
   useEffect(() => {
     const vp = viewportRef.current
     if (!vp) return
@@ -364,7 +369,7 @@ function TrainingScreen({ onNav, onOpenCoach }) {
       vp.removeEventListener('gesturechange', gc)
       vp.removeEventListener('wheel', wl)
     }
-  }, [])
+  }, [finished])
 
   // keep the red playhead in view while running & zoomed
   useEffect(() => {
@@ -390,6 +395,17 @@ function TrainingScreen({ onNav, onOpenCoach }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finished])
+
+  // brief "analyzing" beat between pressing FINISH and the review actually
+  // appearing, so the numbers don't just snap into place instantly
+  useEffect(() => {
+    if (!finishing) return
+    const t = setTimeout(() => {
+      setFinishing(false)
+      setFinished(true)
+    }, 1600)
+    return () => clearTimeout(t)
+  }, [finishing])
 
   const scrollToMin = (min) => {
     const vp = reviewViewportRef.current
@@ -448,7 +464,29 @@ function TrainingScreen({ onNav, onOpenCoach }) {
     setAddedGoals({})
     setRunning(false)
     setFinished(false)
+    setFinishing(false)
     drawHR(0)
+  }
+
+  // ===================== ANALYZING (brief beat after FINISH, before the review) =====================
+  if (finishing) {
+    return (
+      <>
+        <img className="logo" src={`${A}/c1logo.svg`} alt="C1" />
+        <div className="brand">TRAINING REVIEW</div>
+        <Nav active="training" onNav={onNav} />
+        <div className="sh-avatar" onClick={onOpenCoach}>SH</div>
+
+        <h1 className="sim-title">Simulator Training</h1>
+
+        <div className="sum-panel sum-panel--loading">
+          <div className="sum-loading">
+            <div className="sum-loading__ring" />
+            <div className="sum-loading__text">Analyzing session…</div>
+          </div>
+        </div>
+      </>
+    )
   }
 
   // ===================== TRAINING REVIEW (after FINISH) =====================
@@ -466,7 +504,7 @@ function TrainingScreen({ onNav, onOpenCoach }) {
         <Nav active="training" onNav={onNav} />
         <div className="sh-avatar" onClick={onOpenCoach}>SH</div>
 
-        <h1 className="sim-title">Training Review</h1>
+        <h1 className="sim-title">Simulator Training</h1>
 
         <div className="sum-panel">
           <button className="sim-btn sum-restart" onClick={restart}>NEXT TRAINING</button>
@@ -591,7 +629,7 @@ function TrainingScreen({ onNav, onOpenCoach }) {
       <Nav active="training" onNav={onNav} />
       <div className="sh-avatar" onClick={onOpenCoach}>SH</div>
 
-      <h1 className="sim-title">Simulator Mode</h1>
+      <h1 className="sim-title">Simulator Training</h1>
 
       <div className="sim-panel">
         <div className="sim-timer">{fmtClock(elapsed)}</div>
@@ -767,7 +805,7 @@ function TrainingScreen({ onNav, onOpenCoach }) {
             className="sim-btn sim-finish"
             onClick={() => {
               setRunning(false)
-              setFinished(true)
+              setFinishing(true)
             }}
           >
             FINISH
@@ -798,52 +836,84 @@ function TrainingScreen({ onNav, onOpenCoach }) {
 }
 
 /* ================= DASHBOARD ================= */
-// Mental-focus corners (Spa) — danger + the training goal to prepare the driver
-// each corner's training goal is written to match one of the two goal names
+// Mental-focus corners (Spa) — challenge + the training goal to prepare the driver.
+// Each corner's training goal is written to match one of the two goal names
 // that actually appear in today's schedule ("Focus under pressure" from
 // Simulator/Cognitive training, "Increase neck stability" from Physical
 // Training) — so the track view and the schedule read as one system, not
 // two disconnected screens.
 const FOCUS_POINTS = [
   {
-    name: 'Eau Rouge / Raidillon',
-    danger: 'Blind uphill left-right-left taken near flat-out, with huge vertical and lateral compression at ~290 km/h.',
-    goal: 'Builds "Increase neck stability". The blind uphill compression here loads the neck harder than anywhere else on this track, which is exactly what today\'s Physical Training session is preparing him for.',
+    name: 'Heavy Braking Precision',
+    danger: 'This section demands maximum braking performance while maintaining complete control. Small inconsistencies here affect the rhythm of the entire opening sector.',
+    goal: 'Builds "Focus under pressure". Today\'s braking drills focus on precise brake modulation and controlled release under maximum deceleration, the same reaction-under-load skill Cognitive training is scoring today.',
   },
   {
-    name: 'Les Combes',
-    danger: 'Heavy braking from top speed into a tight right-left after the Kemmel straight, a classic lock-up / overtaking spot.',
-    goal: 'Builds "Focus under pressure". Braking late here with heart rate still spiking from the straight is the same reaction-under-load skill Cognitive training is scoring today.',
+    name: 'High-Speed Commitment',
+    danger: 'The driver must remain fully committed while the car experiences rapid changes in load. Confidence and precise steering are critical to maintaining speed.',
+    goal: 'Builds "Increase neck stability". The rapid load changes through this section are exactly what today\'s Physical Training session is preparing him for.',
   },
   {
-    name: 'Pouhon',
-    danger: 'Fast downhill double-left held at high speed, with a long, sustained lateral load that fatigues the neck.',
-    goal: 'Builds "Increase neck stability". The long, sustained lateral load through this double-left is the exact endurance target of Physical Training.',
+    name: 'Corner Exit Acceleration',
+    danger: 'Maximizing exit speed is essential for carrying momentum onto the following straight. Even small delays in throttle application reduce overall lap performance.',
+    goal: 'Builds "Focus under pressure". Training focuses on earlier and smoother throttle application while maintaining rear grip, the same precision Cognitive training is built around.',
   },
   {
-    name: 'Rivage / Bruxelles',
-    danger: 'Tight downhill hairpin with a blind entry, easy to run wide or lock the inside front.',
-    goal: 'Builds "Focus under pressure". The blind entry demands the same trail-braking precision and patience Cognitive training is built around.',
+    name: 'Rapid Direction Changes',
+    danger: 'This sequence requires quick transitions while maintaining an accurate racing line. Physical and mental workload increase significantly through this section.',
+    goal: 'Builds "Focus under pressure". Cognitive training develops faster decision-making and more consistent steering inputs for exactly this kind of sequence.',
   },
   {
-    name: 'Blanchimont',
-    danger: 'Near-flat high-speed left with little run-off, one of the highest-risk corners on the calendar.',
-    goal: 'Builds "Focus under pressure". Holding this corner flat without lifting is a pure test of the mental commitment Cognitive training targets.',
+    name: 'Rear Tyre Management',
+    danger: 'Maintaining rear grip through this section is essential for preserving tyre performance over longer race stints.',
+    goal: 'Builds "Focus under pressure". Current sessions focus on smoother throttle and steering inputs to reduce tyre degradation, the same controlled precision Cognitive training targets.',
   },
   {
-    name: 'Bus Stop Chicane',
-    danger: 'Hard braking into a tight left-right over the kerbs to end the lap, with high cognitive load and lock-up risk.',
-    goal: 'Builds "Focus under pressure". The high cognitive load of this final chicane is exactly what Cognitive training is preparing him for.',
+    name: 'Performance Under Fatigue',
+    danger: 'Late in the lap, physical fatigue can reduce precision. Consistency here is critical for finishing the lap cleanly and starting the next one with maximum momentum.',
+    goal: 'Builds "Increase neck stability". Endurance exercises in today\'s Physical Training prepare the driver to maintain peak physical performance throughout the race.',
   },
 ]
 
-function DashboardScreen({ onNav, onOpenCoach }) {
+function DashboardScreen({ onNav, onOpenCoach, appVisible }) {
   const [sel, setSel] = useState(null) // selected focus point (1..6)
   const [remain, setRemain] = useState(11 * 86400 + 2 * 3600 + 32 * 60 + 24) // Belgium GP countdown (sec)
   useEffect(() => {
     const id = setInterval(() => setRemain((r) => Math.max(0, r - 1)), 1000)
     return () => clearInterval(id)
   }, [])
+  // on first mount the bracelet hasn't reported anything yet — show an empty
+  // "collecting" state for 2s before the ring/stats reveal real numbers. This
+  // screen mounts immediately at page load, hidden behind the intro video and
+  // FaceID login overlay, so the timer must wait for appVisible (stage==='app')
+  // instead of starting at mount — otherwise it finishes invisibly in the
+  // background and the user never actually sees the collecting animation.
+  const [collecting, setCollecting] = useState(true)
+  useEffect(() => {
+    if (!appVisible) return
+    const t = setTimeout(() => setCollecting(false), 2000)
+    return () => clearTimeout(t)
+  }, [appVisible])
+  // the whole readiness gauge is fed by a live bracelet — every reading drifts
+  // by a small step on its own cadence instead of sitting frozen on one number
+  const [bio, setBio] = useState({ pct: 83, bpm: 62, hydration: 92, focus: 81, stress: 'Low' })
+  useEffect(() => {
+    const step = (v, min, max) => Math.max(min, Math.min(max, v + (Math.random() < 0.5 ? -1 : 1)))
+    const id = setInterval(() => {
+      setBio((b) => {
+        const focus = step(b.focus, 72, 88)
+        return {
+          pct: step(b.pct, 78, 90),
+          bpm: step(b.bpm, 56, 74),
+          hydration: step(b.hydration, 85, 96),
+          focus,
+          stress: focus > 85 ? 'Elevated' : 'Low',
+        }
+      })
+    }, 2200)
+    return () => clearInterval(id)
+  }, [])
+  const bioStatus = bio.pct >= 85 ? 'Stable' : bio.pct >= 80 ? 'Nominal' : 'Monitor'
   const p2 = (n) => String(n).padStart(2, '0')
   const d = Math.floor(remain / 86400)
   const h = Math.floor((remain % 86400) / 3600)
@@ -881,27 +951,31 @@ function DashboardScreen({ onNav, onOpenCoach }) {
 
           <div className="drv2-gauge">
             <div className="drv2-ring">
-              <img className="drv2-ring-outer" src={`${A}/drv-ellipse-outer.svg`} alt="" />
-              <div className="drv2-ring-progress" style={{ '--pct': 83 }} />
-              <div className="drv2-stable">Stable</div>
-              <div className="drv2-pct">83 %</div>
+              <div
+                className={'drv2-ring-progress' + (collecting ? ' drv2-ring-progress--collecting' : '')}
+                style={{ '--pct': collecting ? 0 : bio.pct }}
+              />
+              <div className="drv2-stable">{collecting ? 'Collecting' : bioStatus}</div>
+              <div className="drv2-pct">{collecting ? '—' : `${bio.pct} %`}</div>
             </div>
             <div className="drv2-stats-grid">
               <div className="drv2-stat">
                 <span className="drv2-stat__lbl">BPM</span>
-                <span className="drv2-stat__val">62</span>
+                <span className="drv2-stat__val">{collecting ? '—' : bio.bpm}</span>
               </div>
               <div className="drv2-stat">
                 <span className="drv2-stat__lbl">Hydration</span>
-                <span className="drv2-stat__val">92%</span>
+                <span className="drv2-stat__val">{collecting ? '—' : `${bio.hydration}%`}</span>
               </div>
               <div className="drv2-stat">
                 <span className="drv2-stat__lbl">Focus</span>
-                <span className="drv2-stat__val">81%</span>
+                <span className="drv2-stat__val">{collecting ? '—' : `${bio.focus}%`}</span>
               </div>
               <div className="drv2-stat">
                 <span className="drv2-stat__lbl">Stress</span>
-                <span className="drv2-stat__val drv2-stat__val--good">Low</span>
+                <span className={'drv2-stat__val' + (!collecting && bio.stress === 'Low' ? ' drv2-stat__val--good' : '')}>
+                  {collecting ? '—' : bio.stress}
+                </span>
               </div>
             </div>
           </div>
@@ -934,7 +1008,7 @@ function DashboardScreen({ onNav, onOpenCoach }) {
               <div className="focus-panel__name">{FOCUS_POINTS[sel - 1].name}</div>
               <button className="focus-panel__close" onClick={() => setSel(null)}>×</button>
             </div>
-            <div className="focus-panel__lbl">Why it's dangerous</div>
+            <div className="focus-panel__lbl">Why it's challenging</div>
             <div className="focus-panel__txt">{FOCUS_POINTS[sel - 1].danger}</div>
             <div className="focus-panel__lbl focus-panel__lbl--goal">Training goal</div>
             <div className="focus-panel__txt">{FOCUS_POINTS[sel - 1].goal}</div>
@@ -984,9 +1058,9 @@ const DEFAULT_SESSIONS = [
 function ScheduleOverlay({ onClose }) {
   const OV_HH = 114
   const OV_PAD = 14
-  // starts at the system time (9:40) and creeps forward in real time, so the
+  // starts at the system time (9:04) and creeps forward in real time, so the
   // line visibly moves rather than sitting frozen on one spot
-  const [nowTime, setNowTime] = useState(9 + 40 / 60)
+  const [nowTime, setNowTime] = useState(9 + 4 / 60)
   useEffect(() => {
     const id = setInterval(() => setNowTime((t) => t + 1 / 3600), 1000)
     return () => clearInterval(id)
@@ -1021,6 +1095,68 @@ function ScheduleOverlay({ onClose }) {
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState(null) // session/slot being changed or filled, or null when adding fresh
   const [actionId, setActionId] = useState(null) // card whose Change/Delete menu is open
+
+  // long-press-and-drag reorder: hold a card ~450ms without moving to pick it
+  // up, then drag it to a new time slot. A plain tap still opens the
+  // Change/Delete menu — the timer + move threshold is what tells them apart.
+  // Drag bookkeeping lives in a ref (not state) because the window listeners
+  // are attached once per pointerdown and would otherwise close over stale
+  // state from that render.
+  const [dragId, setDragId] = useState(null)
+  const [dragTop, setDragTop] = useState(0)
+  const dragRef = useRef({ id: null, sessionId: null, startY: 0, startTop: 0, top: 0, moved: false, timer: null })
+  const suppressClickRef = useRef(false)
+
+  const onCardPointerMove = (e) => {
+    const d = dragRef.current
+    const dy = e.clientY - d.startY
+    if (d.id == null && !d.moved && Math.abs(dy) > 6) {
+      d.moved = true
+      clearTimeout(d.timer) // real scroll/tap-drift, not a long-press — bail
+    }
+    if (d.id != null) {
+      const trackH = top(hours[hours.length - 1] + 1)
+      const s = sessions.find((x) => x.id === d.id)
+      const h = s?.height ?? 109
+      d.top = Math.max(OV_PAD, Math.min(trackH - h, d.startTop + dy))
+      setDragTop(d.top)
+    }
+  }
+  const onCardPointerUp = () => {
+    window.removeEventListener('pointermove', onCardPointerMove)
+    window.removeEventListener('pointerup', onCardPointerUp)
+    const d = dragRef.current
+    clearTimeout(d.timer)
+    if (d.id != null) {
+      suppressClickRef.current = true
+      const newStartH = Math.max(8, 8 + (d.top - OV_PAD) / OV_HH)
+      const snapped = Math.round(newStartH * 2) / 2 // snap to the nearest 30 min
+      const hh = Math.floor(snapped)
+      const mm = +((snapped - hh) * 60).toFixed(2)
+      const draggedId = d.id
+      setSessions((prev) =>
+        normalize(prev.map((s) => (s.id === draggedId ? { ...s, start: `${hh}:${mm}` } : s)))
+      )
+      setDragId(null)
+    } else if (d.moved) {
+      suppressClickRef.current = true
+    }
+    dragRef.current = { id: null, sessionId: null, startY: 0, startTop: 0, top: 0, moved: false, timer: null }
+  }
+  const onCardPointerDown = (e, s) => {
+    if (e.button != null && e.button !== 0) return
+    const startTop = top(toH(s.start))
+    dragRef.current = { id: null, sessionId: s.id, startY: e.clientY, startTop, top: startTop, moved: false, timer: null }
+    dragRef.current.timer = setTimeout(() => {
+      const d = dragRef.current
+      if (d.moved || d.sessionId !== s.id) return
+      d.id = s.id
+      setDragId(s.id)
+      setDragTop(startTop)
+    }, 450)
+    window.addEventListener('pointermove', onCardPointerMove)
+    window.addEventListener('pointerup', onCardPointerUp)
+  }
   const [form, setForm] = useState({
     typeValue: SCHEDULE_TYPES[0].value,
     location: SCHEDULE_TYPES[0].location,
@@ -1211,12 +1347,20 @@ function ScheduleOverlay({ onClose }) {
               )
             }
             const [src, size] = ICONS[s.type]
+            const dragging = dragId === s.id
             return (
               <div
                 key={s.id}
-                className={'ov-card' + (s.light ? ' ov-card--light' : '')}
-                style={{ top: top(starts[i]), height: s.height }}
-                onClick={() => setActionId(s.id)}
+                className={'ov-card' + (s.light ? ' ov-card--light' : '') + (dragging ? ' ov-card--dragging' : '')}
+                style={{ top: dragging ? dragTop : top(starts[i]), height: s.height }}
+                onPointerDown={(e) => onCardPointerDown(e, s)}
+                onClick={() => {
+                  if (suppressClickRef.current) {
+                    suppressClickRef.current = false
+                    return
+                  }
+                  setActionId(s.id)
+                }}
               >
                 <div className="ov-card__row">
                   <img
@@ -1360,32 +1504,38 @@ export default function App() {
         {screen === 'training' ? (
           <TrainingScreen onNav={setScreen} onOpenCoach={() => setCoachOpen(true)} />
         ) : (
-          <DashboardScreen onNav={setScreen} onOpenCoach={() => setCoachOpen(true)} />
+          <DashboardScreen onNav={setScreen} onOpenCoach={() => setCoachOpen(true)} appVisible={stage === 'app'} />
         )}
 
         {/* right-edge slide-in schedule overlay (available on every screen) */}
         <div className="ov-edge" onPointerDown={beginOpen} />
         {(() => {
           const px = ovX != null ? ovX : ovOpen ? 0 : PANEL_W
-          const frac = 1 - px / PANEL_W
           return (
             <>
+              {/* no backdrop pointer-capture here on purpose — the track behind the
+                  panel needs to stay draggable while the schedule is open; closing
+                  is via the × button instead of a click-outside-to-close overlay */}
+              <div className="ov-backdrop" style={{ pointerEvents: 'none' }} />
               <div
-                className="ov-backdrop"
-                style={{
-                  pointerEvents: frac > 0.02 ? 'auto' : 'none',
-                }}
-                onClick={() => setOvOpen(false)}
-              />
-              <div
-                className="ov-panel"
+                className="ov-panel-wrap"
                 style={{
                   transform: `translateX(${px}px)`,
                   transition: ovX != null ? 'none' : 'transform .3s cubic-bezier(.4, 0, .2, 1)',
                 }}
-                onPointerDown={beginClose}
               >
-                <ScheduleOverlay onClose={() => setOvOpen(false)} />
+                {/* stuck to the panel's own edge — slides in/out together with it,
+                    rather than staying pinned to the static screen edge. Also a drag
+                    handle itself: grab it and drag right to close, same as the panel. */}
+                <span
+                  className="ov-edge__hint"
+                  onPointerDown={(e) => (ovOpenRef.current ? beginClose(e) : beginOpen(e))}
+                >
+                  ‹
+                </span>
+                <div className="ov-panel" onPointerDown={beginClose}>
+                  <ScheduleOverlay onClose={() => setOvOpen(false)} />
+                </div>
               </div>
             </>
           )

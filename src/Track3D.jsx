@@ -1,10 +1,37 @@
-import { Suspense, useMemo, useRef, useState, useLayoutEffect, useEffect } from 'react'
+import { Suspense, useMemo, useRef, useEffect } from 'react'
 import { Canvas, useLoader, useFrame, useThree } from '@react-three/fiber'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { useTexture, Environment, Lightformer, OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 const M = '/models'
+// six manually-selected anchors, one per challenge location, given as fixed
+// LOCAL coordinates in the track group's own space (i.e. before the group's
+// [-0.15,0,0] rotation is applied). Each was found by inspecting the actual
+// mesh — sampling real vertices and confirming, via rendered screenshots,
+// that the point sits on the visible top edge of the ribbon — then reading
+// off that point's coordinates once and hardcoding them here. Because these
+// are real, static 3D points (not screen positions or a runtime raycast),
+// rendering them as children of the same rotated group means they inherit
+// its rotation/scale automatically and reproject correctly under any zoom,
+// pan, or viewport size — nothing here depends on camera/canvas dimensions.
+const MARKER_ANCHORS = [
+  { id: 1, position: [-0.86466, 0.271292, -0.182173] }, // left diagonal segment
+  { id: 2, position: [-0.075962, 0.176591, -1.625032] }, // top straight
+  { id: 3, position: [1.485788, 0.018381, -1.659673] }, // top-right hairpin entry
+  { id: 4, position: [0.928004, 0.164512, -0.844432] }, // mid connector below the hairpin
+  { id: 5, position: [0.644997, 0.280013, 0.360728] }, // lower chicane
+  { id: 6, position: [1.59952, -0.088357, 0.507678] }, // bottom-right end cap
+]
+// the same six anchors, pre-rotated into world space (forward-applying the
+// group's fixed rotation), so CameraRig — which moves the actual camera in
+// world space — can target them directly without needing a live group ref.
+const GROUP_ROTATION_X = -0.15
+const MARKERS_WORLD = MARKER_ANCHORS.map(({ id, position: [x, y, z] }) => {
+  const cos = Math.cos(GROUP_ROTATION_X)
+  const sin = Math.sin(GROUP_ROTATION_X)
+  return { n: id, pos: [x, y * cos - z * sin, y * sin + z * cos] }
+})
 const DEFAULT_CAM_POS = new THREE.Vector3(0.3, 4.8, 6.45)
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0)
 const TRANSITION_MS = 1500
@@ -56,7 +83,7 @@ function CameraRig({ selected, markers, controlsRef }) {
   return null
 }
 
-function TrackModel({ mode, selected, onSelectPoint, onMarkers }) {
+function TrackModel({ mode, selected, onSelectPoint }) {
   const fbx = useLoader(FBXLoader, `${M}/track.fbx`)
   const [baseMap, metalMap, roughMap, normalMap, emisMap] = useTexture([
     `${M}/track_basecolor.png`,
@@ -66,7 +93,6 @@ function TrackModel({ mode, selected, onSelectPoint, onMarkers }) {
     `${M}/track_emission.png`,
   ])
   const groupRef = useRef()
-  const [markers, setMarkers] = useState([])
 
   const model = useMemo(() => {
     baseMap.colorSpace = THREE.SRGBColorSpace
@@ -101,129 +127,31 @@ function TrackModel({ mode, selected, onSelectPoint, onMarkers }) {
     return obj
   }, [fbx, baseMap, metalMap, roughMap, normalMap, emisMap])
 
-  // compute marker points near the outer edge of the circuit (dangerous corners),
-  // spread around the loop, offset slightly outward so they sit *near* the curve.
-  useLayoutEffect(() => {
-    const g = groupRef.current
-    if (!g) return
-    g.updateWorldMatrix(true, true)
-    const pts = []
-    const v = new THREE.Vector3()
-    g.traverse((c) => {
-      const pos = c.isMesh && c.geometry?.attributes?.position
-      if (!pos) return
-      const step = Math.max(1, Math.floor(pos.count / 1400))
-      for (let i = 0; i < pos.count; i += step) {
-        v.fromBufferAttribute(pos, i).applyMatrix4(c.matrixWorld)
-        pts.push(v.clone())
-      }
-    })
-    if (!pts.length) return
-    const c0 = new THREE.Vector3()
-    pts.forEach((p) => c0.add(p))
-    c0.divideScalar(pts.length)
-    const bb = new THREE.Box3()
-    pts.forEach((p) => bb.expandByPoint(p))
-    const sz = bb.getSize(new THREE.Vector3())
-    const thin = sz.x <= sz.y && sz.x <= sz.z ? 'x' : sz.y <= sz.z ? 'y' : 'z'
-    const [a0, a1] = ['x', 'y', 'z'].filter((a) => a !== thin)
-
-    // the track mesh has real thickness (a wall/barrier cross-section), so picking
-    // purely the outermost point per bucket can land on its side face instead of
-    // the top — bias selection toward the top of the local cross-section too, so
-    // the marker's anchor (and its dot) actually sits on the visible top surface
-    let thinMin = Infinity
-    let thinMax = -Infinity
-    let maxD = 0
-    pts.forEach((p) => {
-      if (p[thin] < thinMin) thinMin = p[thin]
-      if (p[thin] > thinMax) thinMax = p[thin]
-      const d = Math.hypot(p[a0] - c0[a0], p[a1] - c0[a1])
-      if (d > maxD) maxD = d
-    })
-    const thinRange = Math.max(1e-6, thinMax - thinMin)
-    const heightWeight = maxD * 0.6
-
-    const N = 6
-    const buckets = new Array(N).fill(null)
-    pts.forEach((p) => {
-      const ang = Math.atan2(p[a1] - c0[a1], p[a0] - c0[a0])
-      const idx = Math.floor(((ang + Math.PI) / (2 * Math.PI)) * N) % N
-      const d = Math.hypot(p[a0] - c0[a0], p[a1] - c0[a1])
-      const heightNorm = (p[thin] - thinMin) / thinRange // 0 (bottom) .. 1 (top)
-      const score = d + heightNorm * heightWeight
-      if (!buckets[idx] || score > buckets[idx].score) buckets[idx] = { p: p.clone(), score }
-    })
-    const found = buckets
-      .filter(Boolean)
-      .map((b) => {
-        // sit right on the track edge — nudge outward from the track's own center in
-        // the ground plane (not a fixed world axis), plus a small lift along the thin
-        // axis, so the dot hugs the surface from every angle instead of only the one
-        // the fixed +Z nudge used to face
-        const m = b.p.clone()
-        const dx = m[a0] - c0[a0]
-        const dy = m[a1] - c0[a1]
-        const len = Math.hypot(dx, dy) || 1
-        m[a0] += (dx / len) * 0.08
-        m[a1] += (dy / len) * 0.08
-        m[thin] += 0.04
-        return [m.x, m.y, m.z]
-      })
-    // some neighboring buckets (1&6 across the angle wrap-around, 4&5 next to
-    // each other) can end up very close together — nudge each pair apart along
-    // the line between them. Kept small: too big a push moves a point clean off
-    // the track surface since the mesh cross-section is thin.
-    const pushApart = (i, j, push) => {
-      if (found.length <= Math.max(i, j)) return
-      const a = new THREE.Vector3(...found[i])
-      const b = new THREE.Vector3(...found[j])
-      const mid = a.clone().add(b).multiplyScalar(0.5)
-      const dir = a.clone().sub(b)
-      if (dir.lengthSq() < 1e-6) return
-      dir.normalize()
-      const newA = mid.clone().add(dir.clone().multiplyScalar(push))
-      const newB = mid.clone().sub(dir.clone().multiplyScalar(push))
-      found[i] = [newA.x, newA.y, newA.z]
-      found[j] = [newB.x, newB.y, newB.z]
-    }
-    pushApart(0, 5, 0.15) // markers 1 & 6
-    pushApart(3, 4, 0.15) // markers 4 & 5
-    const next = found.map((pos, i) => ({ pos, n: i + 1 }))
-    setMarkers(next)
-    onMarkers?.(next)
-  }, [model])
-
   return (
-    <>
-      <group ref={groupRef} rotation={[-0.15, 0, 0]}>
-        <primitive object={model} />
-      </group>
+    <group ref={groupRef} rotation={[-0.15, 0, 0]}>
+      <primitive object={model} />
       {mode === 'focus' &&
-        markers.map((m) => (
-          <Html key={m.n} position={m.pos} occlude={false} zIndexRange={[100, 90]}>
+        MARKER_ANCHORS.map((m) => (
+          <Html key={m.id} position={m.position} occlude={false} zIndexRange={[100, 90]}>
             <div className="focus-pt-wrap">
-              <span className="focus-pt__dot" />
               <button
-                className={'focus-pt' + (selected === m.n ? ' focus-pt--active' : '')}
+                className={'focus-pt' + (selected === m.id ? ' focus-pt--active' : '')}
                 onClick={(e) => {
                   e.stopPropagation()
-                  onSelectPoint(m.n)
+                  onSelectPoint(m.id)
                 }}
               >
-                <span className="focus-pt__label">{m.n}</span>
-                <span className="focus-pt__stem" />
+                <span className="focus-pt__label">{m.id}</span>
               </button>
             </div>
           </Html>
         ))}
-    </>
+    </group>
   )
 }
 
 export default function Track3D({ mode = 'default', selected = null, onSelectPoint = () => {} }) {
   const controlsRef = useRef()
-  const [markers, setMarkers] = useState([])
 
   return (
     <div className="track-3d">
@@ -236,7 +164,7 @@ export default function Track3D({ mode = 'default', selected = null, onSelectPoi
         <directionalLight position={[6, 9, 6]} intensity={1.8} />
         <directionalLight position={[-6, 3, -4]} intensity={0.8} />
         <Suspense fallback={null}>
-          <TrackModel mode={mode} selected={selected} onSelectPoint={onSelectPoint} onMarkers={setMarkers} />
+          <TrackModel mode={mode} selected={selected} onSelectPoint={onSelectPoint} />
           <Environment resolution={256}>
             <Lightformer intensity={2.4} position={[0, 6, -6]} scale={[12, 12, 1]} />
             <Lightformer intensity={1.1} position={[-6, 2, 2]} scale={[10, 3, 1]} />
@@ -244,7 +172,7 @@ export default function Track3D({ mode = 'default', selected = null, onSelectPoi
             <Lightformer intensity={0.8} position={[0, -4, 3]} scale={[10, 4, 1]} />
           </Environment>
         </Suspense>
-        <CameraRig selected={selected} markers={markers} controlsRef={controlsRef} />
+        <CameraRig selected={selected} markers={MARKERS_WORLD} controlsRef={controlsRef} />
         <OrbitControls
           ref={controlsRef}
           makeDefault
@@ -254,7 +182,7 @@ export default function Track3D({ mode = 'default', selected = null, onSelectPoi
           rotateSpeed={0.9}
           autoRotate={selected == null}
           autoRotateSpeed={0.25}
-          minDistance={2}
+          minDistance={2.4}
           maxDistance={16}
         />
       </Canvas>

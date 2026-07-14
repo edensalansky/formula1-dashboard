@@ -60,7 +60,9 @@ body {
   width: 1194px;
   height: 834px;
   flex: 0 0 auto;
-  transform: scale(var(--scale, 1));
+  /* slight extra zoom on top of the viewport-fit scale, to crop the
+     watermark icon out of the bottom-right corner of the source video */
+  transform: scale(calc(var(--scale, 1) * 1.3));
   transform-origin: center center;
   object-fit: cover;
   background: #000;
