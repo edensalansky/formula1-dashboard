@@ -1,27 +1,30 @@
+/* NOTE: the /formula1-dashboard/ prefix below must stay in sync with
+   vite.config.js's `base` — CSS can't read import.meta.env.BASE_URL like JS
+   can, so these paths are hardcoded to match the GitHub Pages deploy path */
 @font-face {
   font-family: 'Satoshi';
-  src: url('/fonts/Satoshi-Variable.woff2') format('woff2');
+  src: url('/formula1-dashboard/fonts/Satoshi-Variable.woff2') format('woff2');
   font-weight: 300 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Satoshi';
-  src: url('/fonts/Satoshi-VariableItalic.woff2') format('woff2');
+  src: url('/formula1-dashboard/fonts/Satoshi-VariableItalic.woff2') format('woff2');
   font-weight: 300 900;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
   font-family: 'Formula1';
-  src: url('/fonts/Formula1-Bold.ttf') format('truetype');
+  src: url('/formula1-dashboard/fonts/Formula1-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Formula1 Wide';
-  src: url('/fonts/Formula1-Wide.ttf') format('truetype');
+  src: url('/formula1-dashboard/fonts/Formula1-Wide.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;

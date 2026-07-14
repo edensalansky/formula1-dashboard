@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1f1e1e url('/assets/bg.svg') center / cover no-repeat;
+  background: #1f1e1e url('/formula1-dashboard/assets/bg.svg') center / cover no-repeat;
   overflow: hidden;
 }
 
@@ -20,7 +20,7 @@
   flex: 0 0 auto;
   transform: scale(var(--scale, 1));
   transform-origin: center center;
-  background: #1f1e1e url('/assets/bg.svg') center / cover no-repeat;
+  background: #1f1e1e url('/formula1-dashboard/assets/bg.svg') center / cover no-repeat;
   overflow: hidden;
   color: #fff;
 }

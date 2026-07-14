@@ -1,4 +1,4 @@
-const A = '/assets'
+const A = import.meta.env.BASE_URL + 'assets'
 
 export default function LoadingScreen({ onDone }) {
   return (

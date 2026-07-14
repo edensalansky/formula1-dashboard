@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const A = '/assets'
+const A = import.meta.env.BASE_URL + 'assets'
 const NAME = 'Steve Carter'
 
 /* simulated Face ID unlock — no real biometrics, just the iPad-style choreography */

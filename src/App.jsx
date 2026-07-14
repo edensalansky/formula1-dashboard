@@ -9,7 +9,7 @@ import './App.css'
  *  Rebuilt from Figma frame 1413:10695 (1194 x 834) + interactivity
  * ------------------------------------------------------------------ */
 
-const A = '/assets'
+const A = import.meta.env.BASE_URL + 'assets'
 
 /* icon per session type: [src, size] */
 const ICONS = {

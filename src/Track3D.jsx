@@ -4,7 +4,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { useTexture, Environment, Lightformer, OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
-const M = '/models'
+const M = import.meta.env.BASE_URL + 'models'
 // six manually-selected anchors, one per challenge location, given as fixed
 // LOCAL coordinates in the track group's own space (i.e. before the group's
 // [-0.15,0,0] rotation is applied). Each was found by inspecting the actual
