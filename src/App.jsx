@@ -1904,7 +1904,7 @@ export default function App() {
       const vv = window.visualViewport
       const w = vv ? vv.width : window.innerWidth
       const h = vv ? vv.height : window.innerHeight
-      const s = Math.min(w / 1300, h / 834)
+      const s = Math.min(w / 1360, h / 834)
       document.documentElement.style.setProperty('--scale', s)
     }
     fit()
