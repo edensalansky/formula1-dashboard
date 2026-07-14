@@ -131,6 +131,13 @@
   color: #fff;
   white-space: nowrap;
 }
+.sim-title__meta {
+  margin-left: 14px;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0;
+}
 
 .sim-panel {
   position: absolute;
@@ -1657,7 +1664,7 @@
 .sum-hr-label {
   position: absolute;
   left: 28px;
-  top: 201px;
+  top: 233px;
   font-size: 24px;
   font-weight: 700;
   color: #fff;
@@ -1665,7 +1672,7 @@
 .sum-hr {
   position: absolute;
   left: 88px; /* same left as .sim-hr */
-  top: 118px;
+  top: 150px;
   width: 1142px; /* same width as .sim-hr */
   aspect-ratio: 2160 / 220; /* matches the canvas's internal pixel grid so dots render as perfect circles */
 }
@@ -1676,7 +1683,7 @@
 .sumtl-panel {
   position: absolute;
   left: 24px;
-  top: 237px;
+  top: 269px;
   width: 1228px;
   height: 132px;
   border-radius: 16px;
@@ -1720,7 +1727,7 @@
   position: absolute;
   left: 24px;
   right: 24px;
-  top: 378px;
+  top: 410px;
   bottom: 18px;
   display: flex;
   gap: 28px;
@@ -1831,7 +1838,7 @@
 }
 
 .goal-card {
-  margin-top: 12px;
+  margin-top: 7px;
   width: fit-content;
   min-width: 300px;
   max-width: 460px;
@@ -1898,4 +1905,137 @@
 .goal-card__add--added {
   background: rgba(198, 255, 0, 0.16);
   color: #c6ff00;
+}
+
+/* review panel: "This Session" / "Past Trainings" tab switch */
+.sumtabs {
+  position: absolute;
+  left: 24px;
+  top: 10px;
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  padding: 4px;
+}
+.sumtabs__btn {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.sumtabs__btn--active {
+  background: #9747ff;
+  color: #fff;
+}
+/* the tab row now owns the top of the panel, so the session content starts
+   below it instead of at the panel's own top edge */
+.sum-stats {
+  top: 64px;
+}
+
+/* "Past Trainings" — swipeable carousel of the last 3 completed sessions,
+   each a compact mini-review (stats + HR sparkline + key notifications) */
+.sumhist {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 64px;
+  bottom: 18px;
+}
+.sumhist-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+}
+.sumhist-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+}
+.sumhist-card {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+/* the card reuses the exact same review classes as "This Session"
+   (.sum-stats, .sum-hr, .sumtl-panel, .sumbot) — these overrides just
+   re-anchor them to the card's own box instead of the panel's, at the same
+   relative offsets (panel value minus the panel's own top:64/left:24 origin
+   for that section), so the two tabs are pixel-identical in structure */
+.sumhist-card .sum-stats {
+  top: 0;
+  left: 0;
+}
+.sumhist-card .sum-hr-label {
+  top: 169px;
+  left: 4px;
+}
+.sumhist-card .sum-hr {
+  top: 86px;
+  left: 64px;
+}
+.sumhist-card .sumtl-panel {
+  top: 205px;
+  left: 0;
+}
+.sumhist-card .sumbot {
+  top: 346px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.sumhist-nav {
+  position: absolute;
+  right: 8px;
+  bottom: -6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sumhist-nav__btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sumhist-nav__btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.sumhist-nav__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.sumhist-dots {
+  display: flex;
+  gap: 6px;
+}
+.sumhist-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+.sumhist-dot--active {
+  background: #9747ff;
+  width: 16px;
+  border-radius: 3px;
 }

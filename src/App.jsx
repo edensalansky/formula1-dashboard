@@ -127,6 +127,7 @@ function Nav({ active, onNav }) {
 /* ================= SIMULATOR TRAINING (live) ================= */
 const SESSION_SEC = 60 * 60 // 60 minute session
 const RULER_MAX = 90 // timeline ruler runs 0..90 min
+const REVIEW_ZOOM = 13 // default review zoom — pills read as named tags, not bars
 const HR_COLS = 90
 const HR_ROWS = 11
 
@@ -203,6 +204,148 @@ const SYS_EVENTS = [
   { start: 57, dur: 2, label: 'Cool-down', info: 'BPM and stress settling back to baseline · 95 bpm' },
 ]
 
+// last 3 completed sessions, shown as a swipeable review carousel on the
+// Training Review screen, laid out identically to "This Session" (same
+// stats tiles, HR dot-matrix, notification timeline, goal panel) — names,
+// notification labels, and goals reuse the same vocabulary as today's
+// schedule (DEFAULT_SESSIONS) and SYS_EVENTS so the history reads as part
+// of the same ongoing program, not invented one-offs
+const PAST_TRAININGS = [
+  {
+    id: 'p1',
+    title: 'Physical Training',
+    date: 'Yesterday',
+    time: '10:30',
+    duration: '00:42',
+    avgHR: 158,
+    notes: 2,
+    events: [
+      { id: 'ph1', min: 2, dur: 3, label: 'Warm-up', info: 'BPM baseline check before load ramps up · 70 bpm' },
+      {
+        id: 'ph2',
+        min: 10,
+        dur: 4,
+        label: 'G-force neck load',
+        info: 'Stress on the neck under sustained lateral G · peak 4.5 G',
+        goal: {
+          title: 'Increase neck strength under sustained-G',
+          tagType: 'training',
+          tagLabel: 'Physical training',
+          desc: 'Neck load peaked at 4.5G for an extended period.',
+        },
+      },
+      { id: 'ph3', min: 18, dur: 3, label: 'Recovery window', info: 'BPM easing back down · 150 → 115 bpm' },
+      {
+        id: 'ph4',
+        min: 25,
+        dur: 4,
+        label: 'G-force neck load',
+        info: 'Second sustained-G set · peak 4.1 G',
+        goal: {
+          title: 'Increase neck strength under sustained-G',
+          tagType: 'training',
+          tagLabel: 'Physical training',
+          desc: 'Neck load peaked at 4.1G on the second set.',
+        },
+      },
+      { id: 'ph5', min: 34, dur: 2, label: 'Cool-down', info: 'BPM and stress settling back to baseline · 90 bpm' },
+    ],
+  },
+  {
+    id: 'p2',
+    title: 'Simulator Training',
+    date: '2 days ago',
+    time: '09:00',
+    duration: '01:12',
+    avgHR: 172,
+    notes: 3,
+    events: [
+      { id: 's1', min: 3, dur: 3, label: 'Warm-up', info: 'BPM baseline check before load ramps up · 74 bpm' },
+      {
+        id: 's2',
+        min: 14,
+        dur: 2,
+        label: 'High cognitive load',
+        info: 'Focus under load · decision speed at 79%',
+        goal: {
+          title: 'Improve decision speed under stress',
+          tagType: 'simulator',
+          tagLabel: 'Simulator training',
+          desc: 'High cognitive load detected during the braking phase.',
+        },
+      },
+      {
+        id: 's3',
+        min: 22,
+        dur: 5,
+        label: 'Braking-zone focus',
+        info: 'Focus tested across 6 heavy braking zones',
+        goal: {
+          title: 'Improve braking consistency',
+          tagType: 'simulator',
+          tagLabel: 'Simulator training',
+          desc: 'Inconsistent braking points detected.',
+        },
+      },
+      { id: 's4', min: 40, dur: 4, label: 'Concentration peak', info: 'Focus holding steady · 93% accuracy' },
+      {
+        id: 's5',
+        min: 55,
+        dur: 2,
+        label: 'Reaction drill',
+        info: 'Focus + reaction speed drill · avg 225 ms',
+        goal: {
+          title: 'Sharpen reaction time',
+          tagType: 'simulator',
+          tagLabel: 'Simulator training',
+          desc: 'Reaction time above target on the light-panel drill.',
+        },
+      },
+      { id: 's6', min: 68, dur: 3, label: 'Cool-down', info: 'BPM and stress settling back to baseline · 98 bpm' },
+    ],
+  },
+  {
+    id: 'p3',
+    title: 'Cognitive Training',
+    date: '3 days ago',
+    time: '14:00',
+    duration: '00:35',
+    avgHR: 149,
+    notes: 1,
+    events: [
+      { id: 'c1', min: 2, dur: 3, label: 'Warm-up', info: 'BPM baseline check · 68 bpm' },
+      {
+        id: 'c2',
+        min: 9,
+        dur: 2,
+        label: 'Reaction drill',
+        info: 'Focus + reaction speed drill · avg 240 ms',
+        goal: {
+          title: 'Sharpen reaction time',
+          tagType: 'simulator',
+          tagLabel: 'Simulator training',
+          desc: 'Reaction time above target on the light-panel drill.',
+        },
+      },
+      {
+        id: 'c3',
+        min: 18,
+        dur: 5,
+        label: 'Sustained focus',
+        info: 'Focus under fatigue · BPM held at 150',
+        goal: {
+          title: 'Build sustained-attention endurance',
+          tagType: 'training',
+          tagLabel: 'Cognitive training',
+          desc: 'Focus began drifting during the long run.',
+        },
+      },
+      { id: 'c4', min: 28, dur: 3, label: 'Recovery window', info: 'BPM easing back down · 140 → 105 bpm' },
+      { id: 'c5', min: 33, dur: 2, label: 'Cool-down', info: 'BPM and stress settling back to baseline · 88 bpm' },
+    ],
+  },
+]
+
 const HR_HIGH = 7 // column height at/above this = a heart-rate spike — flag it red
 
 // a fresh, random-but-realistic ECG-ish trace — irregular beats, varying baseline,
@@ -222,6 +365,34 @@ function genHRHeights() {
   }
   return heights
 }
+// each past training gets its own realistic-looking HR trace, same generator
+// the live session uses — fixed once at load, since these are completed runs
+PAST_TRAININGS.forEach((p) => {
+  p.hr = genHRHeights()
+})
+
+// draws a fully-revealed HR dot-matrix (every column already complete, unlike
+// the live canvas which reveals column-by-column as the session plays out) —
+// used for past-training reviews, which have no "in progress" state
+function drawStaticHR(canvas, heights) {
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  const W = canvas.width, H = canvas.height
+  const cols = heights.length
+  const cw = W / cols, chh = H / HR_ROWS
+  const r = Math.min(cw, chh) * 0.32
+  ctx.clearRect(0, 0, W, H)
+  for (let c = 0; c < cols; c++) {
+    const isHigh = heights[c] >= HR_HIGH
+    for (let row = 0; row < HR_ROWS; row++) {
+      ctx.beginPath()
+      ctx.arc(c * cw + cw / 2, (HR_ROWS - 1 - row) * chh + chh / 2, r, 0, Math.PI * 2)
+      ctx.fillStyle = row >= heights[c] ? '#1c1c1c' : isHigh ? '#ff3b30' : '#e6e6e6'
+      ctx.fill()
+    }
+  }
+}
+
 const SIM_SPEED = 20 // fake acceleration: 1 real second = 20 sim seconds (60-min session ≈ 3 real min)
 
 function fmtClock(sec) {
@@ -232,6 +403,158 @@ function fmtClock(sec) {
 // same HH:MM:SS format, but from a minutes value (used by the review timeline ruler)
 function fmtHMS(min) {
   return fmtClock(Math.round(min * 60))
+}
+
+// one past-training review — laid out identically to the live session's
+// review body (same sum-stats/sum-hr/sumtl-panel/sumbot classes, positioned
+// via card-scoped CSS overrides so the exact same visual language applies),
+// but fully self-contained: its own canvas, its own selected-notification/
+// added-goals state, so browsing one past session never touches another's.
+function PastTrainingCard({ p, active }) {
+  const [selNotif, setSelNotif] = useState(null)
+  const [addedGoals, setAddedGoals] = useState({})
+  const canvasRef = useRef(null)
+  const viewportRef = useRef(null)
+  const goalEvents = p.events.filter((e) => e.goal)
+  const minToPct = (m) => (m / RULER_MAX) * 100
+
+  useEffect(() => {
+    drawStaticHR(canvasRef.current, p.hr)
+    const first = goalEvents[0] || p.events[0] || null
+    setSelNotif(first)
+    if (first) {
+      requestAnimationFrame(() => {
+        const vp = viewportRef.current
+        if (!vp) return
+        const contentW = vp.clientWidth * REVIEW_ZOOM
+        const x = (first.min / RULER_MAX) * contentW
+        vp.scrollLeft = Math.max(0, x - vp.clientWidth / 2)
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.id])
+
+  const selectNotif = (e) => {
+    setSelNotif(e)
+    const vp = viewportRef.current
+    if (!vp) return
+    const contentW = vp.clientWidth * REVIEW_ZOOM
+    const x = (e.min / RULER_MAX) * contentW
+    requestAnimationFrame(() => {
+      vp.scrollLeft = Math.max(0, x - vp.clientWidth / 2)
+    })
+  }
+  const jumpGoal = (dir) => {
+    if (!goalEvents.length) return
+    const idx = selNotif ? goalEvents.findIndex((e) => e.id === selNotif.id) : -1
+    const next = goalEvents[(idx === -1 ? 0 : idx + dir + goalEvents.length) % goalEvents.length]
+    selectNotif(next)
+  }
+  const toggleAdded = (id) => setAddedGoals((a) => ({ ...a, [id]: !a[id] }))
+
+  return (
+    <div className="sumhist-card" aria-hidden={!active}>
+      <div className="sum-stats">
+        <div className="sum-tile"><b>{p.duration}</b><span>Duration</span></div>
+        <div className="sum-tile"><b>{p.events.length}</b><span>System alerts</span></div>
+        <div className="sum-tile"><b>{p.notes}</b><span>Coach notes</span></div>
+        <div className="sum-tile"><b>{p.avgHR}<i>bpm</i></b><span>Avg heart-rate</span></div>
+      </div>
+
+      <div className="sum-hr-label">HR</div>
+      <canvas ref={canvasRef} className="sum-hr" width={p.hr.length * 24} height={HR_ROWS * 20} />
+
+      <div className="sumtl-panel">
+        <div className="sumtl-viewport" ref={viewportRef}>
+          <div className="sumtl-track" style={{ width: REVIEW_ZOOM * 100 + '%' }}>
+            {Array.from({ length: Math.floor(RULER_MAX / 0.5) + 1 }).map((_, i) => {
+              const m = i * 0.5
+              return (
+                <div
+                  key={'gl' + i}
+                  className={'gridline' + (m % 10 === 0 ? ' gridline--major' : m % 5 === 0 ? ' gridline--mid' : '')}
+                  style={{ left: minToPct(m) + '%' }}
+                />
+              )
+            })}
+            {Array.from({ length: Math.floor(RULER_MAX / 0.5) + 1 }).map((_, i) => {
+              const m = i * 0.5
+              return (
+                <span key={'tk' + i} className="tick tick--top" style={{ left: minToPct(m) + '%' }}>
+                  {fmtHMS(m)}
+                </span>
+              )
+            })}
+            <div className="axis" />
+            {p.events.map((e) => (
+              <div
+                key={e.id}
+                className={'notif notif--sys' + (e.goal ? ' notif--hasgoal' : '') + (selNotif?.id === e.id ? ' notif--sel' : '')}
+                style={{ left: minToPct(e.min) + '%' }}
+                onClick={() => selectNotif(e)}
+              >
+                {e.label}
+              </div>
+            ))}
+            {selNotif && <div className="playhead" style={{ left: minToPct(selNotif.min) + '%' }} />}
+          </div>
+        </div>
+      </div>
+
+      <div className="sumbot">
+        <div className="sumbot-detail">
+          {selNotif ? (
+            <>
+              <span className="sumbot-detail__badge sumbot-detail__badge--sys">SYSTEM</span>
+              <div className="sumbot-detail__title">{selNotif.label}</div>
+              <div className="sumbot-detail__meta">
+                {fmtHMS(selNotif.min)}
+                {selNotif.dur ? ` · ${selNotif.dur} min` : ''}
+              </div>
+              <div className="sumbot-detail__info">{selNotif.info}</div>
+            </>
+          ) : (
+            <div className="sumbot-detail__empty">Select a notification on the timeline.</div>
+          )}
+        </div>
+
+        <div className="sumbot-goals">
+          <div className="sumbot-goals__head">
+            <span>Suggested Goals</span>
+            {goalEvents.length > 0 && (
+              <div className="sumbot-jump">
+                <button onClick={() => jumpGoal(-1)} aria-label="Previous goal"><span>‹</span></button>
+                <span>
+                  {selNotif?.goal ? goalEvents.findIndex((e) => e.id === selNotif.id) + 1 : '–'}/{goalEvents.length}
+                </span>
+                <button onClick={() => jumpGoal(1)} aria-label="Next goal"><span>›</span></button>
+              </div>
+            )}
+          </div>
+          {selNotif?.goal ? (
+            <div className="goal-card">
+              <div className="goal-card__title">{selNotif.goal.title}</div>
+              <div className="goal-card__tag">
+                <img src={ICONS[selNotif.goal.tagType][0]} alt="" />
+                {selNotif.goal.tagLabel}
+              </div>
+              <div className="goal-card__bottom">
+                <span className="goal-card__desc">{selNotif.goal.desc}</span>
+                <button
+                  className={'goal-card__add' + (addedGoals[selNotif.id] ? ' goal-card__add--added' : '')}
+                  onClick={() => toggleAdded(selNotif.id)}
+                >
+                  {addedGoals[selNotif.id] ? 'Added ✓' : 'Add'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="sumbot-goals__empty">No suggested goal for this moment.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function TrainingScreen({ onNav, onOpenCoach }) {
@@ -245,6 +568,10 @@ function TrainingScreen({ onNav, onOpenCoach }) {
   const [scrollX, setScrollX] = useState(0) // timeline horizontal scroll offset
   const [finished, setFinished] = useState(false) // show the session review
   const [finishing, setFinishing] = useState(false) // brief "analyzing" loading state after FINISH, before the review
+  const [reviewTab, setReviewTab] = useState('session') // review: 'session' (this run) | 'history' (last 3 trainings)
+  const [histIdx, setHistIdx] = useState(0) // review: which past-training card is centered
+  const histDragRef = useRef(null)
+  const [histDragX, setHistDragX] = useState(null) // live drag offset (px), null when idle
   const [selNotif, setSelNotif] = useState(null) // review: selected timeline notification
   const [addedGoals, setAddedGoals] = useState({}) // review: goal ids marked "Added"
   const canvasRef = useRef(null)
@@ -285,7 +612,6 @@ function TrainingScreen({ onNav, onOpenCoach }) {
     })),
   ].sort((a, b) => a.min - b.min)
   const goalEvents = allEvents.filter((e) => e.goal)
-  const REVIEW_ZOOM = 13 // default review zoom — pills read as named tags, not bars
 
   const drawHR = (el) => {
     const cv = canvasRef.current
@@ -465,7 +791,37 @@ function TrainingScreen({ onNav, onOpenCoach }) {
     setRunning(false)
     setFinished(false)
     setFinishing(false)
+    setReviewTab('session')
+    setHistIdx(0)
     drawHR(0)
+  }
+
+  // ===== review: "Past Trainings" carousel drag (mirrors the schedule-panel drag pattern) =====
+  const scaleNow = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1
+  const onHistDragMove = (e) => {
+    const d = histDragRef.current
+    if (!d) return
+    const dx = (e.clientX - d.startX) / d.scale
+    d.dx = dx
+    setHistDragX(dx)
+  }
+  const onHistDragEnd = () => {
+    window.removeEventListener('pointermove', onHistDragMove)
+    window.removeEventListener('pointerup', onHistDragEnd)
+    const dx = histDragRef.current?.dx ?? 0
+    histDragRef.current = null
+    setHistIdx((i) => {
+      if (dx < -60 && i < PAST_TRAININGS.length - 1) return i + 1
+      if (dx > 60 && i > 0) return i - 1
+      return i
+    })
+    setHistDragX(null)
+  }
+  const beginHistDrag = (e) => {
+    histDragRef.current = { startX: e.clientX, scale: scaleNow(), dx: 0 }
+    setHistDragX(0)
+    window.addEventListener('pointermove', onHistDragMove)
+    window.addEventListener('pointerup', onHistDragEnd)
   }
 
   // ===================== ANALYZING (brief beat after FINISH, before the review) =====================
@@ -504,119 +860,184 @@ function TrainingScreen({ onNav, onOpenCoach }) {
         <Nav active="training" onNav={onNav} />
         <div className="sh-avatar" onClick={onOpenCoach}>SH</div>
 
-        <h1 className="sim-title">Simulator Training</h1>
+        <h1 className="sim-title">
+          {reviewTab === 'history' ? PAST_TRAININGS[histIdx].title : 'Simulator Training'}
+          {reviewTab === 'history' && (
+            <span className="sim-title__meta">{PAST_TRAININGS[histIdx].date} · {PAST_TRAININGS[histIdx].time}</span>
+          )}
+        </h1>
 
         <div className="sum-panel">
           <button className="sim-btn sum-restart" onClick={restart}>NEXT TRAINING</button>
 
-          <div className="sum-stats">
-            <div className="sum-tile"><b>{fmtClock(elapsed).slice(3)}</b><span>Duration</span></div>
-            <div className="sum-tile"><b>{SYS_EVENTS.length}</b><span>System alerts</span></div>
-            <div className="sum-tile"><b>{notes.length}</b><span>Coach notes</span></div>
-            <div className="sum-tile"><b>{avgHR}<i>bpm</i></b><span>Avg heart-rate</span></div>
+          <div className="sumtabs">
+            <button
+              className={'sumtabs__btn' + (reviewTab === 'session' ? ' sumtabs__btn--active' : '')}
+              onClick={() => setReviewTab('session')}
+            >
+              This Session
+            </button>
+            <button
+              className={'sumtabs__btn' + (reviewTab === 'history' ? ' sumtabs__btn--active' : '')}
+              onClick={() => setReviewTab('history')}
+            >
+              Past Trainings
+            </button>
           </div>
 
-          <div className="sum-hr-label">HR</div>
-          <canvas ref={canvasRef} className="sum-hr" width={HR_COLS * 24} height={HR_ROWS * 20} />
-
-          <div className="sumtl-panel">
-            <div className="sumtl-viewport" ref={reviewViewportRef}>
-              <div className="sumtl-track" style={{ width: zoom * 100 + '%' }}>
-                {/* the review always opens "zoomed in" (Figma 1699:1272) — fine
-                    HH:MM:SS ruler every 30s so notification names read clearly */}
-                {zoom > 2 && <div className="sec-grid" />}
-                {Array.from({ length: Math.floor(RULER_MAX / 0.5) + 1 }).map((_, i) => {
-                  const m = i * 0.5
-                  return (
-                    <div
-                      key={'gl' + i}
-                      className={'gridline' + (m % 10 === 0 ? ' gridline--major' : m % 5 === 0 ? ' gridline--mid' : '')}
-                      style={{ left: minToPct(m) + '%' }}
-                    />
-                  )
-                })}
-                {Array.from({ length: Math.floor(RULER_MAX / 0.5) + 1 }).map((_, i) => {
-                  const m = i * 0.5
-                  return (
-                    <span key={'tk' + i} className="tick tick--top" style={{ left: minToPct(m) + '%' }}>
-                      {fmtHMS(m)}
-                    </span>
-                  )
-                })}
-                <div className="axis" />
-                {allEvents.map((e) => (
-                  <div
-                    key={e.id}
-                    className={
-                      'notif notif--' + e.type +
-                      (e.goal ? ' notif--hasgoal' : '') +
-                      (selNotif?.id === e.id ? ' notif--sel' : '')
-                    }
-                    style={{ left: minToPct(e.min) + '%' }}
-                    onClick={() => selectNotif(e)}
-                  >
-                    {e.label}
-                  </div>
-                ))}
-                {selNotif && <div className="playhead" style={{ left: minToPct(selNotif.min) + '%' }} />}
+          {reviewTab === 'session' ? (
+            <>
+              <div className="sum-stats">
+                <div className="sum-tile"><b>{fmtClock(elapsed).slice(3)}</b><span>Duration</span></div>
+                <div className="sum-tile"><b>{SYS_EVENTS.length}</b><span>System alerts</span></div>
+                <div className="sum-tile"><b>{notes.length}</b><span>Coach notes</span></div>
+                <div className="sum-tile"><b>{avgHR}<i>bpm</i></b><span>Avg heart-rate</span></div>
               </div>
-            </div>
-          </div>
 
-          <div className="sumbot">
-            <div className="sumbot-detail">
-              {selNotif ? (
-                <>
-                  <span className={'sumbot-detail__badge sumbot-detail__badge--' + selNotif.type}>
-                    {selNotif.type === 'user' ? 'COACH NOTE' : 'SYSTEM'}
-                  </span>
-                  <div className="sumbot-detail__title">{selNotif.label}</div>
-                  <div className="sumbot-detail__meta">
-                    {fmtHMS(selNotif.min)}
-                    {selNotif.dur ? ` · ${selNotif.dur} min` : ''}
-                  </div>
-                  <div className="sumbot-detail__info">{selNotif.info}</div>
-                </>
-              ) : (
-                <div className="sumbot-detail__empty">Select a notification on the timeline.</div>
-              )}
-            </div>
+              <div className="sum-hr-label">HR</div>
+              <canvas ref={canvasRef} className="sum-hr" width={HR_COLS * 24} height={HR_ROWS * 20} />
 
-            <div className="sumbot-goals">
-              <div className="sumbot-goals__head">
-                <span>Suggested Goals</span>
-                {goalEvents.length > 0 && (
-                  <div className="sumbot-jump">
-                    <button onClick={() => jumpGoal(-1)} aria-label="Previous goal"><span>‹</span></button>
-                    <span>
-                      {selNotif?.goal ? goalEvents.findIndex((e) => e.id === selNotif.id) + 1 : '–'}/{goalEvents.length}
-                    </span>
-                    <button onClick={() => jumpGoal(1)} aria-label="Next goal"><span>›</span></button>
-                  </div>
-                )}
-              </div>
-              {selNotif?.goal ? (
-                <div className="goal-card">
-                  <div className="goal-card__title">{selNotif.goal.title}</div>
-                  <div className="goal-card__tag">
-                    <img src={ICONS[selNotif.goal.tagType][0]} alt="" />
-                    {selNotif.goal.tagLabel}
-                  </div>
-                  <div className="goal-card__bottom">
-                    <span className="goal-card__desc">{selNotif.goal.desc}</span>
-                    <button
-                      className={'goal-card__add' + (addedGoals[selNotif.id] ? ' goal-card__add--added' : '')}
-                      onClick={() => toggleAdded(selNotif.id)}
-                    >
-                      {addedGoals[selNotif.id] ? 'Added ✓' : 'Add'}
-                    </button>
+              <div className="sumtl-panel">
+                <div className="sumtl-viewport" ref={reviewViewportRef}>
+                  <div className="sumtl-track" style={{ width: zoom * 100 + '%' }}>
+                    {/* the review always opens "zoomed in" (Figma 1699:1272) — fine
+                        HH:MM:SS ruler every 30s so notification names read clearly */}
+                    {zoom > 2 && <div className="sec-grid" />}
+                    {Array.from({ length: Math.floor(RULER_MAX / 0.5) + 1 }).map((_, i) => {
+                      const m = i * 0.5
+                      return (
+                        <div
+                          key={'gl' + i}
+                          className={'gridline' + (m % 10 === 0 ? ' gridline--major' : m % 5 === 0 ? ' gridline--mid' : '')}
+                          style={{ left: minToPct(m) + '%' }}
+                        />
+                      )
+                    })}
+                    {Array.from({ length: Math.floor(RULER_MAX / 0.5) + 1 }).map((_, i) => {
+                      const m = i * 0.5
+                      return (
+                        <span key={'tk' + i} className="tick tick--top" style={{ left: minToPct(m) + '%' }}>
+                          {fmtHMS(m)}
+                        </span>
+                      )
+                    })}
+                    <div className="axis" />
+                    {allEvents.map((e) => (
+                      <div
+                        key={e.id}
+                        className={
+                          'notif notif--' + e.type +
+                          (e.goal ? ' notif--hasgoal' : '') +
+                          (selNotif?.id === e.id ? ' notif--sel' : '')
+                        }
+                        style={{ left: minToPct(e.min) + '%' }}
+                        onClick={() => selectNotif(e)}
+                      >
+                        {e.label}
+                      </div>
+                    ))}
+                    {selNotif && <div className="playhead" style={{ left: minToPct(selNotif.min) + '%' }} />}
                   </div>
                 </div>
-              ) : (
-                <div className="sumbot-goals__empty">No suggested goal for this moment.</div>
-              )}
+              </div>
+
+              <div className="sumbot">
+                <div className="sumbot-detail">
+                  {selNotif ? (
+                    <>
+                      <span className={'sumbot-detail__badge sumbot-detail__badge--' + selNotif.type}>
+                        {selNotif.type === 'user' ? 'COACH NOTE' : 'SYSTEM'}
+                      </span>
+                      <div className="sumbot-detail__title">{selNotif.label}</div>
+                      <div className="sumbot-detail__meta">
+                        {fmtHMS(selNotif.min)}
+                        {selNotif.dur ? ` · ${selNotif.dur} min` : ''}
+                      </div>
+                      <div className="sumbot-detail__info">{selNotif.info}</div>
+                    </>
+                  ) : (
+                    <div className="sumbot-detail__empty">Select a notification on the timeline.</div>
+                  )}
+                </div>
+
+                <div className="sumbot-goals">
+                  <div className="sumbot-goals__head">
+                    <span>Suggested Goals</span>
+                    {goalEvents.length > 0 && (
+                      <div className="sumbot-jump">
+                        <button onClick={() => jumpGoal(-1)} aria-label="Previous goal"><span>‹</span></button>
+                        <span>
+                          {selNotif?.goal ? goalEvents.findIndex((e) => e.id === selNotif.id) + 1 : '–'}/{goalEvents.length}
+                        </span>
+                        <button onClick={() => jumpGoal(1)} aria-label="Next goal"><span>›</span></button>
+                      </div>
+                    )}
+                  </div>
+                  {selNotif?.goal ? (
+                    <div className="goal-card">
+                      <div className="goal-card__title">{selNotif.goal.title}</div>
+                      <div className="goal-card__tag">
+                        <img src={ICONS[selNotif.goal.tagType][0]} alt="" />
+                        {selNotif.goal.tagLabel}
+                      </div>
+                      <div className="goal-card__bottom">
+                        <span className="goal-card__desc">{selNotif.goal.desc}</span>
+                        <button
+                          className={'goal-card__add' + (addedGoals[selNotif.id] ? ' goal-card__add--added' : '')}
+                          onClick={() => toggleAdded(selNotif.id)}
+                        >
+                          {addedGoals[selNotif.id] ? 'Added ✓' : 'Add'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="sumbot-goals__empty">No suggested goal for this moment.</div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="sumhist">
+              <div className="sumhist-viewport">
+                <div
+                  className="sumhist-track"
+                  style={{
+                    transform: `translateX(calc(${-histIdx * 100}% + ${histDragX ?? 0}px))`,
+                    transition: histDragX != null ? 'none' : 'transform .35s cubic-bezier(.4, 0, .2, 1)',
+                  }}
+                  onPointerDown={beginHistDrag}
+                >
+                  {PAST_TRAININGS.map((p, i) => (
+                    <PastTrainingCard p={p} key={p.id} active={i === histIdx} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="sumhist-nav">
+                <button
+                  className="sumhist-nav__btn"
+                  disabled={histIdx === 0}
+                  onClick={() => setHistIdx((i) => Math.max(0, i - 1))}
+                  aria-label="Previous training"
+                >
+                  ‹
+                </button>
+                <div className="sumhist-dots">
+                  {PAST_TRAININGS.map((p, i) => (
+                    <span key={p.id} className={'sumhist-dot' + (i === histIdx ? ' sumhist-dot--active' : '')} />
+                  ))}
+                </div>
+                <button
+                  className="sumhist-nav__btn"
+                  disabled={histIdx === PAST_TRAININGS.length - 1}
+                  onClick={() => setHistIdx((i) => Math.min(PAST_TRAININGS.length - 1, i + 1))}
+                  aria-label="Next training"
+                >
+                  ›
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </>
     )
